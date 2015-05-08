@@ -1,0 +1,121 @@
+Package otc;
+/**
+ * The accepted syntax and grammar for the OncoTime compiler. 
+ **/
+ 
+
+Helpers
+	ascii_all	= [0..127];
+	alpha_lower = ['a' .. 'z']; 
+	alpha_upper = ['A' .. 'Z']; 
+	alpha       = [alpha_lower + alpha_upper]; 
+	digit       = ['0'.. '9']; 
+	cr			= 13; 								/* Carriage Return */ 
+	tb			= 9;								/* Horizontal TAB  */ 
+	nl 			= 10 | 13; 							/* New Line 	   */ 
+	sp			= ' ';								/* Space		   */
+	us			= 95;								/* Underscore	   */ 
+	
+	/* Used for Documentation Comments, taken from Group 4 (R1) */
+	not_star = [ascii_all - '*']; 
+	not_star_or_slash = [ascii_all - ['*' + '/']];  
+	
+	
+Tokens
+	
+	/* Keywords */ 
+	t_script = 'script';
+	t_by	 = 'by'; 
+	t_of	 = 'of';
+	t_to	 = 'to';
+	t_in	 = 'in'; 
+	t_use	 = 'use'; 
+	t_group  = 'group'; 
+	t_period = 'period is';
+	t_population = 'population is'; 
+	t_doctor = 'doctors are'; 
+	t_events = 'events are'; 
+	t_foreach = 'foreach'; 
+	t_table  = 'table'; 
+	t_where  = 'where';
+	t_print	 = 'print';
+	t_native = 'native'; 
+	t_like 	 = 'like'; 
+	t_sequence = 'sequence'; 
+	t_sequences = 'sequences'; 
+	t_list		= 'list'; 
+	t_barchart  = 'barchart'; 
+	t_size	 = 'size of';
+	t_member = 'member'; 
+	t_count  = 'count'; 
+	t_timeline = 'timeline';
+	
+	/* Types */
+	t_id_type = 'Id';
+	t_sex_type = 'Sex';
+	t_birthyear_type = 'Birthyear';
+	t_diagnosis_type = 'Diagnosis';
+	t_postalcode_type = 'PostalCode'; 
+	t_years_type = 'Years';
+	t_months_type = 'Months';
+	t_days_type = 'Days'; 
+	t_date_type = 'Dates';
+	t_event_type = 'Event';
+	t_sequence_type = 'Sequence'; 
+	
+	
+	/* Character Tokens */
+	l_paren = '('; 
+	r_paren = ')'; 
+	comma   = ','; 
+	
+	/* Files */
+	t_group_file = alpha (alpha | digit | us)* '.grp'; 
+	
+	/* Values */
+	t_identifier = alpha_lower (alpha | digit | us)*;
+	t_script_name = alpha_upper (alpha | digit | us)*; 
+	t_doc_comment = '/*' not_star* ('*' (not_star_or_slash not_star*)?)* '*/';
+	
+	
+	
+	/* Will be used for Ignored Tokens */ 
+	empty_space = cr | nl | tb | sp;
+	line_comment = '/''/' [ascii_all - [10+13]]* (10 | 13 | 10 13); 
+	
+
+Ignored Tokens
+	empty_space, line_comment;  
+	
+
+Productions
+
+	/*
+	 * Root Structure of an OncoProgram 
+	 */ 
+	program = header; 
+	
+	/*
+	 * The header to the script. 
+	 */
+	header = t_script t_script_name l_paren parameters? r_paren t_doc_comment dependencies*;
+	
+	parameters = type t_identifier parameters_tail?;
+	parameters_tail = comma parameters;
+	
+	type = {id} t_id_type
+			| {sex} t_sex_type 
+			| {birthyear} t_birthyear_type 
+			| {diagnosis} t_diagnosis_type 
+			| {postalcode} t_postalcode_type 
+			| {years} t_years_type
+			| {months} t_months_type
+			| {days} t_days_type
+			| {date} t_date_type
+			| {event} t_event_type
+			| {sequence} t_sequence_type;
+	
+	dependencies = t_use dependencies_list;
+	dependencies_list = t_group_file dependencies_tail?; 
+	dependencies_tail = comma dependencies_list;  
+	
