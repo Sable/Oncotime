@@ -1,0 +1,34 @@
+script MyPatientData(PostalCode p, Sex s, Days d)
+/**
+ * Doctors define their personal information in the myGroups.grp file. 
+ * They then pass the specific information they are interested in as input. 
+ */
+
+use myGroups.grp, viksGroups.grp
+use myTestGroups.grp
+
+group Id extraId = {400, 500}
+group Id my_patient_ids = {100, 200, 300, <extraId>}
+group Sex my_genders = {M, F}
+group Birthyear my_byears = {1993, 2014, 1960}
+group Diagnosis my_diags = {breast, liver, brain}
+group Years my_years = {2014, 2015, 2016}
+group Months my_months = {10, 01, 21, 13}
+group Days my_days = {Mon, Tues, Wed, Fri, Sat}
+
+population is
+	Id: 100, 200, 300
+
+period is
+	Days: Mon, Tues, Wed
+
+doctors are
+	Id: 200, 300, 500
+
+events are
+	Events: patient_seen
+
+{
+	foreach Patient p
+		print p
+}

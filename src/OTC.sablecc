@@ -4,6 +4,9 @@ Package otc;
  **/
  
 
+/*******************************************************************
+ * Helpers                                                         *
+ *******************************************************************/
 Helpers
 	ascii_all	= [0..127];
 	alpha_lower = ['a' .. 'z']; 
@@ -20,102 +23,417 @@ Helpers
 	not_star = [ascii_all - '*']; 
 	not_star_or_slash = [ascii_all - ['*' + '/']];  
 	
-	
+/*******************************************************************
+ * Tokens                                                          *
+ *******************************************************************/	
 Tokens
 	
-	/* Keywords */ 
-	t_script = 'script';
-	t_by	 = 'by'; 
-	t_of	 = 'of';
-	t_to	 = 'to';
-	t_in	 = 'in'; 
-	t_use	 = 'use'; 
-	t_group  = 'group'; 
-	t_period = 'period is';
-	t_population = 'population is'; 
-	t_doctor = 'doctors are'; 
-	t_events = 'events are'; 
-	t_foreach = 'foreach'; 
-	t_table  = 'table'; 
-	t_where  = 'where';
-	t_print	 = 'print';
-	t_native = 'native'; 
-	t_like 	 = 'like'; 
-	t_sequence = 'sequence'; 
-	t_sequences = 'sequences'; 
-	t_list		= 'list'; 
-	t_barchart  = 'barchart'; 
-	t_size	 = 'size of';
-	t_member = 'member'; 
-	t_count  = 'count'; 
-	t_timeline = 'timeline';
+  /*********************
+   * Keywords          *
+   *********************/
+	t_script = 				'script';
+	t_by	 = 				'by'; 
+	t_of	 = 				'of';
+	t_to	 = 				'to';
+	t_in	 =				'in'; 
+	t_use	 = 				'use';
+	t_end    = 				'end';
+	t_not	 = 				'not';   
+	t_group  = 				'group'; 
+	t_period = 				'period is';
+	t_population = 			'population is'; 
+	t_doctor_filter = 		'doctors are'; 
+	t_events = 				'events are'; 
+	t_foreach = 			'foreach'; 
+	t_table  = 				'table'; 
+	t_where  = 				'where';
+	t_print	 = 				'print';
+	t_native = 				'native'; 
+	t_like 	 = 				'like'; 
+	t_sequence = 			'sequence' | 'sequences'; 
+	t_list		= 			'list'; 
+	t_barchart  = 			'barchart'; 
+	t_size	 = 				'size of';
+	t_member = 				'member'; 
+	t_count  = 				'count'; 
+	t_timeline = 			'timeline';
+	t_lengthof = 			'length of'; 
+	t_male = 				'male' | 'm' | 'M' | 'Male'; 
+	t_female = 				'female' |'f' | 'F' | 'Female';
+	t_element = 			'element';
+	 
+	 
+  /*********************
+   * Types             *
+   *********************/
+	t_id_type = 					'Id';
+	t_sex_type = 					'Sex';
+	t_birthyear_type = 				'Birthyear';
+	t_patient_type = 				'Patient' | 'Patients';
+	t_doctor_type = 				'Doctor' | 'Doctors'; 
+	t_diagnosis_type = 				'Diagnosis';
+	t_postalcode_type = 			'PostalCode'; 
+	t_years_type = 					'Years';
+	t_months_type = 				'Months';
+	t_days_type = 					'Days'; 
+	t_date_type = 					'Dates';
+	t_event_type = 					'Events';
+	t_sequence_type = 				'Sequence';
+	t_time_type = 					'Times';  
+	// TODO: Figure out how we want times. 
 	
-	/* Types */
-	t_id_type = 'Id';
-	t_sex_type = 'Sex';
-	t_birthyear_type = 'Birthyear';
-	t_diagnosis_type = 'Diagnosis';
-	t_postalcode_type = 'PostalCode'; 
-	t_years_type = 'Years';
-	t_months_type = 'Months';
-	t_days_type = 'Days'; 
-	t_date_type = 'Dates';
-	t_event_type = 'Event';
-	t_sequence_type = 'Sequence'; 
+	
+  /*********************
+   * Char Tokens       *
+   *********************/
+	l_paren = 		'('; 
+	r_paren = 		')'; 
+	l_brace = 		'{';
+	r_brace = 		'}'; 
+	comma   = 		','; 
+	colon   = 		':'; 
+	equals  = 		'=';
+	l_angle = 		'<';  
+	r_angle = 		'>'; 
+	l_square = 		'[';
+	r_square = 		']'; 
+	r_arrow  = 		'->'; 
+	pipe	 = 		'|'; 
+	
+  /*********************
+   * File Names        *
+   *********************/
+	t_group_file = 			alpha (alpha | digit | us)* '.grp'; 
+	
+  /*********************
+   * Values            *
+   *********************/
+	t_postalcode = 			alpha_upper digit alpha_upper digit alpha_upper digit | alpha_upper digit alpha_upper | alpha_upper;
+	t_date = 				digit digit digit digit '-' digit digit '-' digit digit; 
+	t_time = 				digit digit ':' digit digit;   
+	t_day = 				'Mon' | 'Tues' | 'Wed' | 'Thurs' | 'Fri' | 'Sat' | 'Sun'; 
+	t_year   = 				digit digit digit digit; 
+	t_month = 				digit digit; 
+	t_number = 				digit*; 
+	t_identifier = 			alpha_lower (alpha | digit | us)*;
+	t_script_name = 		alpha_upper (alpha | digit | us)*;    
+	t_doc_comment = 		'/*' not_star* ('*' (not_star_or_slash not_star*)?)* '*/';
 	
 	
-	/* Character Tokens */
-	l_paren = '('; 
-	r_paren = ')'; 
-	comma   = ','; 
 	
-	/* Files */
-	t_group_file = alpha (alpha | digit | us)* '.grp'; 
-	
-	/* Values */
-	t_identifier = alpha_lower (alpha | digit | us)*;
-	t_script_name = alpha_upper (alpha | digit | us)*; 
-	t_doc_comment = '/*' not_star* ('*' (not_star_or_slash not_star*)?)* '*/';
-	
-	
-	
-	/* Will be used for Ignored Tokens */ 
-	empty_space = cr | nl | tb | sp;
-	line_comment = '/''/' [ascii_all - [10+13]]* (10 | 13 | 10 13); 
+  /*********************
+   * Ignored           *
+   *********************/
+	empty_space = 			cr | nl | tb | sp;
+	line_comment =		 	'/''/' [ascii_all - [10+13]]* (10 | 13 | 10 13); 
 	
 
+/*******************************************************************
+ * Ignored Tokens                                                  *
+ *******************************************************************/
 Ignored Tokens
 	empty_space, line_comment;  
-	
 
+
+/*******************************************************************
+ * Productions                                                     *
+ *******************************************************************/
 Productions
 
-	/*
-	 * Root Structure of an OncoProgram 
-	 */ 
-	program = header; 
+  /*********************
+   * Root Program      *
+   *********************/	
+	program =
+		header group_definitions* filter_definitions* computation_list 
+			{-> New program(header, [group_definitions], [filter_definitions], computation_list)};  
 	
-	/*
-	 * The header to the script. 
-	 */
-	header = t_script t_script_name l_paren parameters? r_paren t_doc_comment dependencies*;
 	
-	parameters = type t_identifier parameters_tail?;
-	parameters_tail = comma parameters;
+  /*********************
+   * Header      	   *
+   *********************/
+	header = 
+		t_script t_script_name l_paren [params]:parameters r_paren t_doc_comment dependencies*
+			{-> New header(t_script_name,[params.typed_name], t_doc_comment, [dependencies])}; 
 	
-	type = {id} t_id_type
-			| {sex} t_sex_type 
-			| {birthyear} t_birthyear_type 
-			| {diagnosis} t_diagnosis_type 
-			| {postalcode} t_postalcode_type 
-			| {years} t_years_type
-			| {months} t_months_type
-			| {days} t_days_type
-			| {date} t_date_type
-			| {event} t_event_type
-			| {sequence} t_sequence_type;
+	parameters
+		{-> typed_name*} = 
+				{head} [param]:typed_name 
+					{-> [param.typed_name]} |
+				{tail} [param]:typed_name comma [rest]:parameters 
+					{-> [param.typed_name, rest.typed_name]}; 
 	
-	dependencies = t_use dependencies_list;
-	dependencies_list = t_group_file dependencies_tail?; 
-	dependencies_tail = comma dependencies_list;  
+		
+	dependencies = 
+				{uselist} t_use [deplist]:dependencies_list
+					{-> New dependencies([deplist.t_group_file])};
+	
+	dependencies_list
+		{-> t_group_file*} =
+				{head} [groupfile]:t_group_file 
+					{-> [groupfile]} |
+				{tail} [groupfile]:t_group_file comma [rest]:dependencies_list
+					{-> [groupfile, rest.t_group_file]}; 
+	
+  /*********************
+   * Group Definitions *
+   *********************/
+   group_definitions =
+   	 	t_group typed_name equals l_brace typed_list r_brace 
+   	 		{-> New group_definitions(typed_name, typed_list)};
+   
+  /*********************
+   * Filter Definitions*
+   *********************/
+	 filter_definitions = 
+	 	{population_filter} t_population filter_list* 
+	 		{-> New filter_definitions.population_filter([filter_list])} | 
+	 	{period_filter} 	t_period filter_list*  
+	 		{-> New filter_definitions.period_filter([filter_list])} |	
+	   	{event_filter}      t_events filter_list*  
+	   		{-> New filter_definitions.event_filter([filter_list])} |
+		{doctor_filter}     t_doctor_filter filter_list* 
+			{-> New filter_definitions.doctor_filter([filter_list])};
+	 
+	 filter_list =
+	 	 type colon typed_list 
+	 	 	{-> New filter_list(type, typed_list)};
+	
+  /*********************
+   * Computations      *
+   *********************/
+   computation_list = 
+   		l_brace computation* r_brace
+   			{-> New computation_list([computation])}; 
+   
+   computation = 
+   		{foreach} t_foreach actor t_identifier computation
+   			{-> New computation.foreach(actor, t_identifier, computation)}| 
+   		{foreach_set} t_foreach actor t_identifier l_brace computation_list r_brace
+   			{-> New computation.foreach_set(actor, t_identifier, computation_list)} |
+   		{foreach_table} t_foreach t_element [iterator]:t_identifier t_of [variable]:t_identifier computation 
+   			{-> New computation.foreach_table(iterator, variable, computation)} |
+   		{foreach_table_set} t_foreach t_element [iterator]:t_identifier t_of [variable]:t_identifier computation_list 
+   			{-> New computation.foreach_table_set(iterator, variable, computation_list)} |
+		{foreach_sequence} t_foreach t_sequence t_identifier t_like sequence computation
+			{-> New computation.foreach_sequence(t_identifier, sequence, computation)} | 
+	    {foreach_sequence_set} t_foreach t_sequence t_identifier t_like sequence computation_list
+	    	{-> New computation.foreach_sequence_set(t_identifier, sequence, computation_list)} |
+   		{print} t_print t_identifier
+   			{-> New computation.print(t_identifier)} | 
+   		{print_attr} t_print attr_list t_of t_identifier
+   			{-> New computation.print_attr([attr_list.type], t_identifier)} | 
+   		{print_timeline} t_print t_timeline t_of t_identifier
+   			{-> New computation.print_timeline(t_identifier)} | 
+   		{print_length} t_print t_lengthof t_identifier
+   			{-> New computation.print_length(t_identifier)} |
+   		{print_tableitem} t_print [variable]:t_identifier l_square [iterator]:t_identifier r_square
+   			{-> New computation.print_tableitem(variable, iterator)} | 
+   		{table} t_table t_identifier equals t_count actor t_by type
+   			{-> New computation.table(t_identifier, actor, type)} |
+   		{barchart} t_barchart t_identifier 
+   			{-> New computation.barchart(t_identifier)} | 
+   		{list} t_list t_identifier equals t_sequence t_like sequence
+   			{-> New computation.list(t_identifier, sequence)}; 
+   	
+   	attr_list{-> type*} = 
+   		{singleton} type 
+   			{ -> [type]} |
+   		{list} type comma attr_list
+   			{ -> [type, attr_list.type]};
+   	
+   	sequence = 
+   		l_square sequence_item* t_end r_square
+   			{-> New sequence([sequence_item])}; 
+   	
+   	sequence_item = 
+   		{not} l_paren t_not event_item r_paren r_arrow
+   			{-> New sequence_item.not(event_item)} |
+   		{disjunction} disjunction_list r_arrow
+   			{-> New sequence_item.disjunction([disjunction_list.event_item])} |
+   		{permutation} l_brace permutation_list r_brace r_arrow
+   			{-> New sequence_item.permutation([permutation_list.event_item])};  
+   	
+   	disjunction_list {-> event_item*} = 
+   		{singleton} event_item
+   			{-> [event_item]} |
+   		{list} event_item pipe disjunction_list
+   			{-> [event_item, disjunction_list.event_item]}; 
+   	
+   	permutation_list {-> event_item*} = 
+   		{singleton} event_item
+   			{-> [event_item]} |
+   		{list} event_item comma permutation_list
+   			{-> [event_item, permutation_list.event_item]}; 
+   	
+   	event_item = 
+   		{noparam} t_identifier 
+   			{-> New event_item.noparam(t_identifier)} |
+   		{param} t_identifier l_paren event_param_list r_paren
+   			{-> New event_item.param(t_identifier, [event_param_list.t_identifier])}; 
+   	
+   	event_param_list {-> t_identifier*} = 
+   		{singleton} t_identifier 
+   			{-> [t_identifier]} |
+   		{list} t_identifier comma event_param_list
+   			{-> [t_identifier, event_param_list.t_identifier]};  
+   		 
+   		  
+
+  /*********************
+   * Used Everywhere   *
+   *********************/
+	type = 
+		  {id} t_id_type
+		| {sex} t_sex_type 
+		| {birthyear} t_birthyear_type 
+		| {diagnosis} t_diagnosis_type 
+		| {postalcode} t_postalcode_type 
+		| {years} t_years_type
+		| {months} t_months_type
+		| {days} t_days_type
+		| {date} t_date_type
+		| {event} t_event_type
+		| {time} t_time_type;
+	
+	typed_list =   
+	   {number_list_item} 		t_number typed_list_tail?
+	 | {male_list_item} 		t_male typed_list_tail?
+	 | {female_list_item} 		t_female typed_list_tail?
+	 | {postalcode_list_item} 	t_postalcode typed_list_tail 
+	 | {year_list_item}			t_year typed_list_tail? 
+	 | {months_list_item} 		t_month typed_list_tail?
+	 | {days_list_item} 		t_day typed_list_tail?
+	 | {date_list_item} 		t_date typed_list_tail? 
+	 | {string_list_item} 		t_identifier typed_list_tail? // TODO: Smarter way to do this.
+	 | {time_list_item} 		t_time typed_list_tail?
+	 | {expandable_list_item} 	l_angle t_identifier r_angle typed_list_tail?; 
+			
+	typed_list_tail = 
+		comma typed_list;   
+	
+	typed_name = 
+		type t_identifier
+			{-> New typed_name(type, t_identifier)};  
+	
+	actor =  
+		  {patient} t_patient_type
+		| {doctor} t_doctor_type
+		| {diagnosis} t_diagnosis_type; 
+	
+
+
+/*******************************************************************
+ * Abstract Syntax Tree                                            *
+ *******************************************************************/
+ Abstract Syntax Tree
+ 
+  /*********************
+   * Root Program      *
+   *********************/
+   program = 
+   		header group_definitions* filter_definitions* computation_list;
+   
+  /**********************
+   * Header             *
+   **********************/ 
+   header = 
+   		[name]:t_script_name [parameters]:typed_name* [script_comment]:t_doc_comment [uses]:dependencies* ; 
+   
+   dependencies = 
+   		t_group_file*;
+   
+  /**********************
+   * Group Definitions  *
+   **********************/
+   group_definitions = 
+   		typed_name typed_list;
+   
+  /**********************
+   * Filter Definitions *
+   **********************/
+   filter_definitions = 
+		{population_filter} filter_list* |
+		{period_filter} filter_list* |
+		{event_filter} filter_list* |
+		{doctor_filter} filter_list*;
+	
+	filter_list = 
+		type typed_list;
+		
+  /**********************
+   * Computations       *
+   **********************/
+   computation_list = computation*;
+   
+   computation = 
+   		| {foreach} actor t_identifier computation
+   		| {foreach_set} actor t_identifier computation_list
+   		| {foreach_table} [iterator]:t_identifier [variable]:t_identifier computation
+   		| {foreach_table_set} [iterator]:t_identifier [variable]:t_identifier computation_list
+   		| {foreach_sequence} t_identifier sequence computation
+   		| {foreach_sequence_set} t_identifier sequence computation_list
+   		| {print} t_identifier
+   		| {print_attr} [attr_list]:type* t_identifier
+   		| {print_timeline} t_identifier 
+   		| {print_length} t_identifier
+   		| {print_tableitem} [variable]:t_identifier [iterator]:t_identifier
+   		| {table} t_identifier actor type
+   		| {barchart} t_identifier
+   		| {list} t_identifier sequence;   
+   		
+   	attr_list = type*;
+   	
+   	sequence = sequence_item*; 
+   	
+   	sequence_item = 
+		| {not} event_item
+		| {disjunction} event_item*
+		| {permutation} event_item*;  
+	
+	event_item = 
+		  {noparam} t_identifier
+		| {param} t_identifier [event_param_list]:t_identifier*; 
+   	 
+
+  /*********************
+   * Used Everywhere   *
+   *********************/
+  
+	type = 
+		  {id} t_id_type
+		| {sex} t_sex_type 
+		| {birthyear} t_birthyear_type 
+		| {diagnosis} t_diagnosis_type 
+		| {postalcode} t_postalcode_type 
+		| {years} t_years_type
+		| {months} t_months_type
+		| {days} t_days_type
+		| {date} t_date_type
+		| {event} t_event_type
+		| {time} t_time_type;
+	
+	typed_list =   
+	   {number_list_item} 		t_number typed_list_tail?
+	 | {male_list_item} 		t_male typed_list_tail?
+	 | {female_list_item} 		t_female typed_list_tail?
+	 | {postalcode_list_item} 	t_postalcode typed_list_tail 
+	 | {year_list_item}			t_year typed_list_tail? 
+	 | {months_list_item} 		t_month typed_list_tail?
+	 | {days_list_item} 		t_day typed_list_tail?
+	 | {date_list_item} 		t_date typed_list_tail? 
+	 | {string_list_item} 		t_identifier typed_list_tail? // TODO: Smarter way to do this.
+	 | {time_list_item} 		t_time typed_list_tail?
+	 | {expandable_list_item} 	l_angle t_identifier r_angle typed_list_tail?; 
+			
+	typed_list_tail = 
+		comma typed_list;   
+	
+	typed_name = 
+		type t_identifier; 
+
+	actor =  
+		  {patient} t_patient_type
+		| {doctor} t_doctor_type
+		| {diagnosis} t_diagnosis_type; 
+	
 	
