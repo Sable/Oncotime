@@ -1,0 +1,2 @@
+group Months my_months = {10, 01, 21, 13}
+group Days my_days = {Mon, Tues, Wed, Fri, Sat}

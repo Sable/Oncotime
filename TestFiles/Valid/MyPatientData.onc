@@ -1,0 +1,32 @@
+script MyPatientData(PostalCode p, Sex s, Days d)
+/**
+ * Doctors define their personal information in the group file. 
+ * They then pass the specific information they are interested in as input. 
+ */
+
+use myGroups.grp
+use myTestGroups.grp
+
+
+group Sex my_genders = {M, F}
+group Birthyear my_byears = {1993, 2014, 1960}
+group Diagnosis my_diags = {breast, liver, brain}
+group Years my_years = {2014, 2015, 2016}
+
+
+population is
+	Id: 100, 200, 300
+
+period is
+	Days: Mon, Tues, Wed
+
+doctors are
+	Id: 200, 300, 500
+
+events are
+	Events: patient_seen
+
+{
+	foreach Patient p
+		print p
+}
