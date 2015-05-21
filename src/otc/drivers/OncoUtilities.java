@@ -135,4 +135,15 @@ public class OncoUtilities
 			return name.substring(0, index+1); 
 		
 	}
+
+	/**
+	 * Get's the name of the script entered without the file path / script extension.
+	 * @param name: The filepath / name of the script: e.g: ../Tests/Valid/oncoScript.onc
+	 * @return String: oncoScript
+	 * TODO: Recognize different types of file names and extensions. 
+	 */
+	public static String getNameOfFileWithoutExtension(String name) 
+	{
+		return name.substring(name.lastIndexOf("/")+1, name.length()-4); 
+	}
 }

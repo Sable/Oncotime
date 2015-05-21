@@ -1,0 +1,7 @@
+// Todo
+(1) Update use group expansion features.
+(2) Include Times (Start, Finish, etc.)
+(3) Make ranges for certain operation (int to int, etc).
+
+// Questions
+(1) What do we do with redefinition of groups? 

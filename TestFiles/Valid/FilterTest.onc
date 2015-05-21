@@ -1,0 +1,37 @@
+script FilterTest()
+/**
+ * This file tests Filters.
+ * (1) Are they expanded to all (*) if nothing is typed? 
+ * (2) We should take the set union of all Filters
+ */
+
+
+// First definition of poplulation filter
+population is
+	 Id: 1000, 2000, 3000
+	 Sex: M
+	 Birthyear: 1967
+	 Diagnosis: breast
+	 PostalCode: k2g6k8
+
+// Normal doctor filter
+doctors are
+	Id: 2123, 1231, 1415
+
+// Period Filter not filled out. It should completely expand to everything. 
+
+// Normal Events filter
+events are
+	Events: ct_sim_booked 
+
+// Redefinition of Population. 
+population is
+	Sex: F
+	Diagnosis: brain
+
+{
+	foreach Patient p
+		print p
+}
+
+

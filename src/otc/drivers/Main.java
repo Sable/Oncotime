@@ -42,10 +42,6 @@ public class Main
 		{
 			file = (String)filesIterator.next();
 			
-			/* We want to expand the use declerations. */
-			OncoUtilities.expandGroups(file);
-			file = OncoUtilities.getExtendedFilePath(); 
-
 			if (MyError.debug)
 				MyError.debug(" - Parsing "+file+"...");
 
@@ -59,7 +55,6 @@ public class Main
 				/* lump classfile together into 'the program' */
 				theProgram.add(new ProgramFile(file, tree));
 				
-				 
 				
 			/* handle all exceptions */
 			} catch(IOException e) {
@@ -80,11 +75,28 @@ public class Main
 		if (MyError.debug) MyError.debugln(" done");
 		MyError.noErrors();
 		
+		/* Inclusion of 'used' .grp files */ 
+		if(MyError.debug) MyError.debug("Including .grp files..."); 
+		UseExpander.expandGroups(theProgram); 
+		if(MyError.debug) MyError.debugln(" done");
+		MyError.noErrors(); 
+		
+		/* Symbol Table creation, Expansion of <>, Filter cleanup*/
+		if(MyError.debug) MyError.debug("Creating the Symbol Table and cleaning up the program..."); 
+		OncoCleaner.clean(theProgram); 
+		if(MyError.debug) MyError.debugln(" done");
+		MyError.noErrors(); 
+		
 		/* Weeding */
 		if (MyError.debug) MyError.debug("Weeding the program...");
 		Weeder.weed(theProgram);
 		if (MyError.debug) MyError.debugln(" done");
 		MyError.noErrors();
+		
+		/* Type Checking */ 
+		
+		/* Code Generation */ 
+		
 
 	}
 

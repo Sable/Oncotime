@@ -1,0 +1,5 @@
+/**
+ * These are extra groups we only sometimes want to include. 
+ */
+
+group Events myExtraGroupEvents = {patient_contacted}

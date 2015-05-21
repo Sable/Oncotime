@@ -18,8 +18,7 @@ public class Weeder extends DepthFirstAdapter
 	 */
 	public Weeder(String name)
 	{
-		filename = name.substring(name.lastIndexOf("/")+1, name.length()-5);
-		
+		filename =  OncoUtilities.getNameOfFileWithoutExtension(name);
 	}
 	
 	/**
@@ -55,16 +54,6 @@ public class Weeder extends DepthFirstAdapter
             MyError.error(filename, ErrorMessages.scriptNameMismatch, node.getLine());
 	}
 	
-	
-	/**
-	 * Validates group file names.
-	 * TODO: What validations do we do here? 
-	 */
-	@Override
-	public void caseTTGroupFile(TTGroupFile node)
-	{
-	 
-	}
 	
     // All non-token nodes
     public void defaultOut(Node node)

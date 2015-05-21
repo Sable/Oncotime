@@ -27,7 +27,7 @@ Helpers
  * Tokens                                                          *
  *******************************************************************/	
 Tokens
-	A
+	
   /*********************
    * Keywords          *
    *********************/
@@ -144,15 +144,18 @@ Productions
    * Root Program      *
    *********************/	
 	program =
-		header group_definitions* filter_definitions* computation_list 
-			{-> New program(header, [group_definitions], [filter_definitions], computation_list)};  
+		{oncoprogram} header group_definitions* filter_definitions* computation_list 
+			{-> New program.oncoprogram(header, [group_definitions], [filter_definitions], computation_list)} |
+		{groupfile} t_doc_comment group_definitions*
+			{-> New program.groupfile(t_doc_comment, [group_definitions])}; 
+		  
 	
 	
   /*********************
    * Header      	   *
    *********************/
 	header = 
-		t_script t_script_name l_paren [params]:parameters r_paren t_doc_comment dependencies*
+		t_script t_script_name l_paren [params]:parameters? r_paren t_doc_comment dependencies*
 			{-> New header(t_script_name,[params.typed_name], t_doc_comment, [dependencies])}; 
 	
 	parameters
@@ -208,7 +211,7 @@ Productions
    computation = 
    		{foreach} t_foreach actor t_identifier computation
    			{-> New computation.foreach(actor, t_identifier, computation)}| 
-   		{foreach_set} t_foreach actor t_identifier l_brace computation_list r_brace
+   		{foreach_set} t_foreach actor t_identifier computation_list
    			{-> New computation.foreach_set(actor, t_identifier, computation_list)} |
    		{foreach_table} t_foreach t_element [iterator]:t_identifier t_of [variable]:t_identifier computation 
    			{-> New computation.foreach_table(iterator, variable, computation)} |
@@ -218,6 +221,10 @@ Productions
 			{-> New computation.foreach_sequence(t_identifier, sequence, computation)} | 
 	    {foreach_sequence_set} t_foreach t_sequence t_identifier t_like sequence computation_list
 	    	{-> New computation.foreach_sequence_set(t_identifier, sequence, computation_list)} |
+	    {foreach_memeber} t_foreach t_member [name]:t_identifier t_in [sequencename]:t_identifier computation
+	    	{-> New computation.foreach_member(name, sequencename, computation)} |
+	    {foreach_member_set} t_foreach t_member [name]:t_identifier t_in [sequencename]:t_identifier computation_list
+	    	{-> New computation.foreach_member_set(name, sequencename, computation_list)} |
    		{print} t_print t_identifier
    			{-> New computation.print(t_identifier)} | 
    		{print_attr} t_print attr_list t_of t_identifier
@@ -331,7 +338,9 @@ Productions
    * Root Program      *
    *********************/
    program = 
-   		header group_definitions* filter_definitions* computation_list;
+   	 	{oncoprogram} header group_definitions* filter_definitions* computation_list |
+   	 	{groupfile} t_doc_comment group_definitions*; 
+   
    
   /**********************
    * Header             *
@@ -350,7 +359,7 @@ Productions
    
   /**********************
    * Filter Definitions *
-   **********************/
+   **********************
    filter_definitions = 
 		{population_filter} filter_list* |
 		{period_filter} filter_list* |
@@ -372,6 +381,8 @@ Productions
    		| {foreach_table_set} [iterator]:t_identifier [variable]:t_identifier computation_list
    		| {foreach_sequence} t_identifier sequence computation
    		| {foreach_sequence_set} t_identifier sequence computation_list
+   		| {foreach_member} [name]:t_identifier [sequencename]:t_identifier computation
+   		| {foreach_member_set} [name]:t_identifier [sequencename]:t_identifier computation_list
    		| {print} t_identifier
    		| {print_attr} [attr_list]:type* t_identifier
    		| {print_timeline} t_identifier 
