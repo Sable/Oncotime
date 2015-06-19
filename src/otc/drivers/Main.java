@@ -1,9 +1,13 @@
 package otc.drivers;
 
 import otc.analysis.*;
+import otc.codegeneration.CodeGenerator;
 import otc.lexer.*; 
 import otc.parser.*; 
 import otc.prettyprinter.PrettyPrinter;
+import otc.symboltable.Stage;
+import otc.typecheck.EventValidator;
+import otc.typecheck.TypeChecker;
 import otc.node.*; 
 
 import java.io.*;
@@ -67,7 +71,10 @@ public class Main
 				System.out.println(file+": syntax error: "+e.getMessage());
 				System.exit(1);
 			}
-		} // end loop
+		} // end loop 
+		
+		/* Initialize our Stage */
+		Stage.initStage(); 
 		
 		/* Line Numbers */ 
 		if (MyError.debug) MyError.debug("Adding line numbers to nodes...");
@@ -87,17 +94,26 @@ public class Main
 		if(MyError.debug) MyError.debugln(" done");
 		MyError.noErrors(); 
 		
-		/* Weeding */
-		if (MyError.debug) MyError.debug("Weeding the program...");
-		Weeder.weed(theProgram);
-		if (MyError.debug) MyError.debugln(" done");
+		/* Type Checking */ 
+		if(MyError.debug) MyError.debug("Typechecking the program...");
+		EventValidator.init(); 
+		TypeChecker.typeCheck(theProgram);
+		if(MyError.debug) MyError.debugln(" done");
 		MyError.noErrors();
 		
-		/* Type Checking */ 
+		/* Pretty Print */ 
+//		if(MyError.debug) MyError.debugln("Pretty printing ..."); 
+//		PrettyPrinter.prettyPrint(theProgram);
+//		if(MyError.debug) MyError.debugln(" done");
+//		MyError.noErrors(); 
 		
 		/* Code Generation */ 
+		if(MyError.debug) MyError.debug("Validating the data...");
+		DataValidator.validate(theProgram); 
+		CodeGenerator.generate(theProgram); 
+		if(MyError.debug) MyError.debugln(" done"); 
+		MyError.noErrors(); 
 		
-
 	}
 
 	/**

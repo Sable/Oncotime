@@ -5,7 +5,13 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import otc.analysis.DepthFirstAdapter;
+import otc.node.ABarchartComputation;
+import otc.node.ADoctorFilterFilterDefinitions;
+import otc.node.AEventFilterFilterDefinitions;
+import otc.node.AFilterList;
 import otc.node.AForeachComputation;
+import otc.node.AForeachMemberComputation;
+import otc.node.AForeachMemberSetComputation;
 import otc.node.AForeachSequenceComputation;
 import otc.node.AForeachSequenceSetComputation;
 import otc.node.AForeachSetComputation;
@@ -13,9 +19,23 @@ import otc.node.AForeachTableComputation;
 import otc.node.AForeachTableSetComputation;
 import otc.node.AGroupDefinitions;
 import otc.node.AHeader;
+import otc.node.AListComputation;
+import otc.node.APeriodFilterFilterDefinitions;
+import otc.node.APopulationFilterFilterDefinitions;
+import otc.node.APrintAttrComputation;
+import otc.node.APrintComputation;
+import otc.node.APrintLengthComputation;
+import otc.node.APrintTableitemComputation;
+import otc.node.APrintTimelineComputation;
+import otc.node.ATableComputation;
 import otc.node.ATypedName;
 import otc.node.Node;
+import otc.node.PFilterList;
 import otc.node.PTypedName;
+import otc.symboltable.Symbol;
+import otc.symboltable.GroupSymbol;
+import otc.symboltable.ParameterSymbol;
+import otc.symboltable.Stage;
 
 /**
  * This file expands the OncoTime program, constructs the Symbol Table along the way. 
@@ -23,25 +43,13 @@ import otc.node.PTypedName;
  * @author vikramsundaram
  */
 public class OncoCleaner extends DepthFirstAdapter 
-{
-	// Keeps track of the number of variables with the same name. 
-	private HashMap<String, Integer> nameCount = new HashMap<String, Integer>(); 
-	
-	
-	/**
-	 * Constructor
-	 */
-	public OncoCleaner()
-	{
-		
-	}
-	
+{	
 	/**
 	 * The visitor method that starts the traversal for the program.  
 	 * @param theProgram
 	 */
 	public static void clean(LinkedList<ProgramFile> theProgram) 
-	{
+	{ 	
 		Iterator<ProgramFile> iter = theProgram.iterator();
 		ProgramFile programFile;
 		Node ast;
@@ -49,40 +57,26 @@ public class OncoCleaner extends DepthFirstAdapter
 		while (iter.hasNext()) 
 		{
 			programFile = (ProgramFile)iter.next();
-			ast = programFile.getAst();  
+			ast = programFile.getAst(); 
+			
+			// Set the current FileName 
+			OncoUtilities.setFileName(OncoUtilities.getNameOfFileWithoutExtension(programFile.getName()));
+			
 			ast.apply(new OncoCleaner());
 		}
 	}
 	
 	/**
-	 * This function either creates a new entry in name count or simply augments the count. s
+	 * ----------------------------------------------------------
+	 * The actual recursive iteration through the tree. 
+	 * ----------------------------------------------------------
 	 */
-	public void incrementNameCount(String name)
-	{
-		// First we see if the name exists already.
-		// Adding it if not. 
-		if(!nameCount.containsKey(name))
-		{
-			nameCount.put(name, 0); 
-		}
-		else
-		{
-			// We increment the counter if it's already there. 
-			nameCount.put(name, nameCount.get(name) + 1); 
-		}
-	}
 	
 	/**
-	 * Augments the name. 
-	 * @param name
-	 * @return
+	 * These are all the Definitions nodes. 
+	 * Here we handle expansion of group nodes. 
+	 * All the 'used' group nodes are already expanded. 
 	 */
-	public String augmentedName(String name)
-	{
-		return name + "_" + nameCount.get(name); 
-	}
-	
-	
 	@Override 
 	public void caseAGroupDefinitions(AGroupDefinitions node)
 	{
@@ -91,14 +85,20 @@ public class OncoCleaner extends DepthFirstAdapter
 		String name = typedName.getTIdentifier().getText(); 
 		
 		// Increment the name count. 
-		incrementNameCount(name); 
+		Stage.addOrIncrement(name); 
 		
 		// Now we get the value and augment the name. 
-		typedName.getTIdentifier().setText(augmentedName(name));
+		typedName.getTIdentifier().setText(Stage.getMostRecentName(name));
 		
-		System.out.println("Augmented Group Name: " + typedName.getTIdentifier().getText()); 
+		// We now store the symbol in the table. 
+		GroupSymbol symbol = new GroupSymbol(node); 
+		Stage.addSymbol(symbol.getName(), symbol);
 	}
 	
+	/**
+	 * Here we handle the parameters.
+	 * TODO: We can (should) throw an error message if a parameter is reused. 
+	 */
 	@Override
 	public void caseAHeader(AHeader node)
 	{	
@@ -107,74 +107,46 @@ public class OncoCleaner extends DepthFirstAdapter
 		{
 			// Increment the Name count. 
 			String name = ((ATypedName)typedName).getTIdentifier().getText();
-			incrementNameCount(name); 
+			Stage.addOrIncrement(name); 
 			
 			// Now we want to update the name. 
-			((ATypedName)typedName).getTIdentifier().setText(augmentedName(name));
+			((ATypedName)typedName).getTIdentifier().setText(Stage.getMostRecentName(name));
 			
-			System.out.println("Augmented Param Name: " + ((ATypedName)typedName).getTIdentifier().getText()); 
+			// Now we want to store the symbol in the table. 
+			ParameterSymbol symbol = new ParameterSymbol(typedName);
+			Stage.addSymbol(symbol.getName(), symbol);
 		}
 	}
 	
-	@Override
-	public void caseAForeachComputation(AForeachComputation node)
+	/**
+	 * We expand all our filters here. 
+	 * The stage and the actual filter objects handle the information. 
+	 */
+	@Override 
+	public void caseAPopulationFilterFilterDefinitions(APopulationFilterFilterDefinitions node)
 	{
-		// We need to update the Name. 
-		String name = node.getTIdentifier().getText(); 
-		incrementNameCount(name); 
-		node.getTIdentifier().setText(augmentedName(name));
-		System.out.println("Augmented Foreach Iterator Name: " + node.getTIdentifier().getText()); 
+		// Add the values in this filter definitions to our construction of values.
+		Stage.addPopulationFilters(node.getFilterList()); 
 	}
 	
-	@Override
-	public void caseAForeachSetComputation(AForeachSetComputation node)
+	@Override 
+	public void caseAPeriodFilterFilterDefinitions(APeriodFilterFilterDefinitions node)
 	{
-		// We need to update the Name. 
-		String name = node.getTIdentifier().getText(); 
-		incrementNameCount(name); 
-		node.getTIdentifier().setText(augmentedName(name));
-		System.out.println("Augmented Foreach Set Iterator Name: " + node.getTIdentifier().getText()); 
+		// Add the values in this filter definitions to our construction of values. 
+		Stage.addPeriodFilters(node.getFilterList());
 	}
 	
-	@Override
-	public void caseAForeachTableComputation(AForeachTableComputation node)
+	@Override 
+	public void caseAEventFilterFilterDefinitions(AEventFilterFilterDefinitions node)
 	{
-		// We need to update the Name. 
-		String name = node.getIterator().getText(); 
-		incrementNameCount(name); 
-		node.getIterator().setText(augmentedName(name));
-		System.out.println("Augmented Foreach Table Iterator Name: " + node.getIterator().getText()); 
+		// Add the values in this filter definitions to our construction of values. 
+		Stage.addEventsFilters(node.getFilterList());
 	}
 	
-	@Override
-	public void caseAForeachTableSetComputation(AForeachTableSetComputation node)
+	@Override 
+	public void caseADoctorFilterFilterDefinitions(ADoctorFilterFilterDefinitions node)
 	{
-		// We need to update the Name. 
-		String name = node.getIterator().getText(); 
-		incrementNameCount(name); 
-		node.getIterator().setText(augmentedName(name));
-		System.out.println("Augmented Foreach Table Set Iterator Name: " + node.getIterator().getText()); 
+		// Add the values in this filter definitions to our construction of values. 
+		Stage.addDoctorFilters(node.getFilterList());
 	}
-	
-	@Override
-	public void caseAForeachSequenceComputation(AForeachSequenceComputation node)
-	{
-		// We need to update the Name. 
-		String name = node.getTIdentifier().getText(); 
-		incrementNameCount(name); 
-		node.getTIdentifier().setText(augmentedName(name));
-		System.out.println("Augmented Foreach Sequence Iterator Name: " + node.getTIdentifier().getText());
-	}
-	
-	@Override
-	public void caseAForeachSequenceSetComputation(AForeachSequenceSetComputation node)
-	{
-		// We need to update the Name. 
-		String name = node.getTIdentifier().getText(); 
-		incrementNameCount(name); 
-		node.getTIdentifier().setText(augmentedName(name));
-		System.out.println("Augmented Foreach Sequence Set Iterator Name: " + node.getTIdentifier().getText());
-	}
-	
-	
 }

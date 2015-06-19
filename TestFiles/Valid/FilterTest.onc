@@ -11,14 +11,17 @@ population is
 	 Id: 1000, 2000, 3000
 	 Sex: M
 	 Birthyear: 1967
+	 PostalCode: K2G6K8
 	 Diagnosis: breast
-	 PostalCode: k2g6k8
+	 
 
 // Normal doctor filter
 doctors are
 	Id: 2123, 1231, 1415
 
-// Period Filter not filled out. It should completely expand to everything. 
+// Normal Period filter
+period is
+	Dates: 2013-01-01, 2015-01-01
 
 // Normal Events filter
 events are

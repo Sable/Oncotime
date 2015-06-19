@@ -16,10 +16,10 @@ population is
 	list s1 = sequences like [ct_sim_booked -> (not ct_sim_completed) -> end]
 
 	// Slightly more complicated sequence, including more events and in any order operator. 
-	list s2 = sequences like [ct_sim_booked -> {ct_sim_completed, ready_for_physics_qa} -> appointment_scheduled -> end]
+	list s2 = sequences like [ct_sim_booked -> {ct_sim_completed, patient_scheduled} -> end]
 
 	// Very complicated sequence including a variety of transitions. 
-	list s3 = sequences like [(not ct_sim_booked) -> (not ct_sim_completed) -> ready_for_physics_qa | appointment_scheduled -> end]
+	list s3 = sequences like [(not ct_sim_booked) -> (not ct_sim_completed) -> treatment_began | patient_scheduled -> end]
 
 	// We want to see all the elements in our complicated sequence. 
 	foreach member seq in s3

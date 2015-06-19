@@ -1,0 +1,25 @@
+Ca breast, unspecified (right, 2010),1
+Overlapping Ca  breast,1
+Carcinoma in situ of breast, unspecified,1
+Ca lower-inner quadrant of breast,1
+Overlapping Ca  breast a 3 o'clock,1
+Ca breast, unspecified (Left, 2012),1
+Ca breast, unspecified,1
+Ca connective and soft tissue, unspecified (Breast),1
+Breast, NOS excludes Skin of breast C44.5,1
+Ca upper-outer quadrant of breast,1
+Carcinoma in situ of breast, unspecified (Right, 2014),1
+Ca upper-outer quadrant of breast, at 2 o'clock,1
+Overlapping Ca  breast (Right),1
+Ca breast, unspecified (Right, 2006),1
+Ca breast, unspecified  (RIGHT),1
+Ca upper-inner quadrant of breast,1
+Ca breast, unspecified (Left, 2002),1
+Upper-outer quadrant of breast,1
+Ca lower-outer quadrant of breast,1
+Ca upper-inner quadrant of breast  (LEFT),1
+Ca breast, unspecified  (LEFT),1
+Ca central portion of breast,1
+Ca breast, unspecified (Left),1
+Overlapping Ca  breast (left, 2006),1
+24

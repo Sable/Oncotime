@@ -10,7 +10,7 @@ population is
 	Birthyear: 1951, 1952, 1953, 1954, 1955
 
 doctors are
-	Id: 1000		// TODO: We want this to be a proper Doctors ID, to properly test.
+	Id: 10001		// TODO: We want this to be a proper Doctors ID, to properly test.
 
 {
 	// First definition of t
@@ -25,8 +25,8 @@ doctors are
 	}
 
 	// Second definitions of t. Currently we allow this, since they have the same type.
-	// I think we should force the user to re-write table. s
-	table t = count Patients by Sex
+	// I think we should force the user to re-write table. 
+	table t2 = count Patients by Sex
 
 	// Display the chart information, for the definition of t. 
 	barchart t

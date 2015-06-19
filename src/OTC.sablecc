@@ -79,7 +79,7 @@ Tokens
 	t_date_type = 					'Dates';
 	t_event_type = 					'Events';
 	t_sequence_type = 				'Sequence';
-	t_time_type = 					'Times';  
+	t_hours_type = 					'Hours' | 'Hour';  
 	// TODO: Figure out how we want times. 
 	
 	
@@ -108,9 +108,10 @@ Tokens
   /*********************
    * Values            *
    *********************/
+    t_star = 				'*'; 
 	t_postalcode = 			alpha_upper digit alpha_upper digit alpha_upper digit | alpha_upper digit alpha_upper | alpha_upper;
 	t_date = 				digit digit digit digit '-' digit digit '-' digit digit; 
-	t_time = 				digit digit ':' digit digit;   
+	t_hour = 				digit digit ':' digit digit;   
 	t_day = 				'Mon' | 'Tues' | 'Wed' | 'Thurs' | 'Fri' | 'Sat' | 'Sun'; 
 	t_year   = 				digit digit digit digit; 
 	t_month = 				digit digit; 
@@ -300,23 +301,37 @@ Productions
 		| {days} t_days_type
 		| {date} t_date_type
 		| {event} t_event_type
-		| {time} t_time_type;
+		| {hour} t_hours_type;
 	
-	typed_list =   
-	   {number_list_item} 		t_number typed_list_tail?
-	 | {male_list_item} 		t_male typed_list_tail?
-	 | {female_list_item} 		t_female typed_list_tail?
-	 | {postalcode_list_item} 	t_postalcode typed_list_tail 
-	 | {year_list_item}			t_year typed_list_tail? 
-	 | {months_list_item} 		t_month typed_list_tail?
-	 | {days_list_item} 		t_day typed_list_tail?
-	 | {date_list_item} 		t_date typed_list_tail? 
-	 | {string_list_item} 		t_identifier typed_list_tail? // TODO: Smarter way to do this.
-	 | {time_list_item} 		t_time typed_list_tail?
-	 | {expandable_list_item} 	l_angle t_identifier r_angle typed_list_tail?; 
+	typed_list{-> typed_list} =   
+	   {number_list_item} 		t_number [typed_list]:typed_list_tail?
+	   	{-> New typed_list.number_list_item(t_number, typed_list.typed_list)}
+	 | {male_list_item} 		t_male [typed_list]:typed_list_tail?
+	 	{-> New typed_list.male_list_item(t_male, typed_list.typed_list)}
+	 | {female_list_item} 		t_female [typed_list]:typed_list_tail?
+	 	{-> New typed_list.female_list_item(t_female, typed_list.typed_list)}
+	 | {postalcode_list_item} 	t_postalcode [typed_list]:typed_list_tail?
+	 	{-> New typed_list.postalcode_list_item(t_postalcode, typed_list.typed_list)} 
+	 | {year_list_item}			t_year [typed_list]:typed_list_tail? 
+	 	{-> New typed_list.year_list_item(t_year, typed_list.typed_list)}
+	 | {months_list_item} 		t_month [typed_list]:typed_list_tail?
+	 	{-> New typed_list.months_list_item(t_month, typed_list.typed_list)}
+	 | {days_list_item} 		t_day [typed_list]:typed_list_tail?
+	 	{-> New typed_list.days_list_item(t_day, typed_list.typed_list)}
+	 | {date_list_item} 		t_date [typed_list]:typed_list_tail? 
+	 	{-> New typed_list.date_list_item(t_date, typed_list.typed_list)}
+	 | {string_list_item} 		t_identifier [typed_list]:typed_list_tail? // TODO: Smarter way to do this.
+	 	{-> New typed_list.string_list_item(t_identifier, typed_list.typed_list)}
+	 | {hour_list_item} 		t_hour [typed_list]:typed_list_tail?
+	 	{-> New typed_list.hour_list_item(t_hour, typed_list.typed_list)}
+	 | {expandable_list_item} 	l_angle t_identifier r_angle [typed_list]:typed_list_tail?
+	 	{-> New typed_list.expandable_list_item(t_identifier, typed_list.typed_list)}
+	 | {all_list_item}			t_star [typed_list]:typed_list_tail?
+	 	{-> New typed_list.all_list_item(t_star, typed_list.typed_list)};  
 			
-	typed_list_tail = 
-		comma typed_list;   
+	typed_list_tail{-> typed_list} = 
+		comma typed_list
+			{-> typed_list};   
 	
 	typed_name = 
 		type t_identifier
@@ -325,7 +340,7 @@ Productions
 	actor =  
 		  {patient} t_patient_type
 		| {doctor} t_doctor_type
-		| {diagnosis} t_diagnosis_type; 
+		| {diagnosis} t_diagnosis_type;
 	
 
 
@@ -346,7 +361,7 @@ Productions
    * Header             *
    **********************/ 
    header = 
-   		[name]:t_script_name [parameters]:typed_name* [script_comment]:t_doc_comment [uses]:dependencies* ; 
+   		[name]:t_script_name [parameters]:typed_name* [script_comment]:t_doc_comment [uses]:dependencies*; 
    
    dependencies = 
    		t_group_file*;
@@ -359,7 +374,7 @@ Productions
    
   /**********************
    * Filter Definitions *
-   **********************
+   **********************/
    filter_definitions = 
 		{population_filter} filter_list* |
 		{period_filter} filter_list* |
@@ -421,23 +436,21 @@ Productions
 		| {days} t_days_type
 		| {date} t_date_type
 		| {event} t_event_type
-		| {time} t_time_type;
+		| {hour} t_hours_type;
 	
 	typed_list =   
-	   {number_list_item} 		t_number typed_list_tail?
-	 | {male_list_item} 		t_male typed_list_tail?
-	 | {female_list_item} 		t_female typed_list_tail?
-	 | {postalcode_list_item} 	t_postalcode typed_list_tail 
-	 | {year_list_item}			t_year typed_list_tail? 
-	 | {months_list_item} 		t_month typed_list_tail?
-	 | {days_list_item} 		t_day typed_list_tail?
-	 | {date_list_item} 		t_date typed_list_tail? 
-	 | {string_list_item} 		t_identifier typed_list_tail? // TODO: Smarter way to do this.
-	 | {time_list_item} 		t_time typed_list_tail?
-	 | {expandable_list_item} 	l_angle t_identifier r_angle typed_list_tail?; 
-			
-	typed_list_tail = 
-		comma typed_list;   
+	   {number_list_item} 		t_number typed_list?
+	 | {male_list_item} 		t_male typed_list?
+	 | {female_list_item} 		t_female typed_list?
+	 | {postalcode_list_item} 	t_postalcode typed_list? 
+	 | {year_list_item}			t_year typed_list? 
+	 | {months_list_item} 		t_month typed_list?
+	 | {days_list_item} 		t_day typed_list?
+	 | {date_list_item} 		t_date typed_list? 
+	 | {string_list_item} 		t_identifier typed_list? // TODO: Smarter way to do this.
+	 | {hour_list_item} 		t_hour typed_list?
+	 | {expandable_list_item} 	t_identifier typed_list?
+	 | {all_list_item}			t_star typed_list?;  
 	
 	typed_name = 
 		type t_identifier; 

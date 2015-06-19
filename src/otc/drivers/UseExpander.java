@@ -16,6 +16,7 @@ import otc.node.AGroupDefinitions;
 import otc.node.AGroupfileProgram;
 import otc.node.AHeader;
 import otc.node.AOncoprogramProgram;
+import otc.node.ATypedName;
 import otc.node.Node;
 import otc.node.PDependencies;
 import otc.node.PGroupDefinitions;
@@ -23,6 +24,7 @@ import otc.node.Start;
 import otc.node.TTGroupFile;
 import otc.parser.Parser;
 import otc.parser.ParserException;
+import otc.symboltable.Stage;
 
 
 /**
@@ -33,15 +35,17 @@ import otc.parser.ParserException;
 public class UseExpander extends DepthFirstAdapter 
 {
 	private LinkedList<AGroupDefinitions> includedGroups = new LinkedList<AGroupDefinitions>();
-	private String fileLocation = ""; 
+	private String fileLocation = "";
+	private String fileName = "";
 	
 	/**
 	 * 
 	 * @param scriptLocation
 	 */
-	public UseExpander(String scriptLocation)
+	public UseExpander(String scriptLocation, String fileName)
 	{
-		this.fileLocation = scriptLocation; 
+		this.fileLocation = scriptLocation;
+		this.fileName = fileName; 
 	}
 	
 	/**
@@ -56,12 +60,12 @@ public class UseExpander extends DepthFirstAdapter
 		
 		while (iter.hasNext()) 
 		{
-			programFile = (ProgramFile)iter.next();
+			programFile = (ProgramFile)iter.next(); 
 			
 			// Store the current files location. 
 			programFile.getFilePath(); 
-			ast = programFile.getAst(); 
-			ast.apply(new UseExpander(programFile.getFilePath()));
+			ast = programFile.getAst();  
+			ast.apply(new UseExpander(programFile.getFilePath(), programFile.getName()));
 		}
 	}
 	
@@ -105,7 +109,9 @@ public class UseExpander extends DepthFirstAdapter
 	private void includeGroupsInFile(TTGroupFile file) 
 	{
 		// We first just want the location of the group file. 
-		String absoluteFileLocation = fileLocation + file.getText();
+		String absoluteFileLocation = fileLocation + file.getText(); 
+		
+		
 		
 		// TODO: We should throw a proper error message if the file does not exist in that location.
 		// We now want to find the file, open it, and parse it.
@@ -119,12 +125,19 @@ public class UseExpander extends DepthFirstAdapter
 			// We want to add the new group decleration to our list. 
 			for(PGroupDefinitions g : ((AGroupfileProgram) tree.getPProgram()).getGroupDefinitions())
 			{	
-				includedGroups.addFirst((AGroupDefinitions)g);
+				AGroupDefinitions group = (AGroupDefinitions) g; 
+				
+				// We want to associate the link in the Stage. s
+				String groupName = (((ATypedName) group.getTypedName())).getTIdentifier().getText();
+				Stage.setFileNameForGroup(groupName, file.toString());
+				
+				// And then we want to put it in our list. 
+				includedGroups.addFirst(group);
+				
 			}
-			
 		} catch (FileNotFoundException e) 
 		{
-			e.printStackTrace();
+			MyError.error(OncoUtilities.getNameOfFileWithoutExtension(fileName), ErrorMessages.fileDoesNotExist(absoluteFileLocation), file.getLine());
 		} catch (ParserException e) 
 		{
 			e.printStackTrace();

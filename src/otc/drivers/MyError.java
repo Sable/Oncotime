@@ -28,6 +28,24 @@ public class MyError {
 		System.err.println(file+":"+lineno+","+pos+": "+msg);
 	}
 
+	public static void error(String fileName, String msg, String location) {
+		nb_errors++;
+		System.err.println(fileName+":"+location+": "+msg);
+		
+	}
+	
+	public static void warning(String file, String msg, int lineno) {
+		System.err.println(file+":"+lineno+": "+msg);
+	}
+	public static void warning(String file, String msg, int lineno, int pos) {
+		System.err.println(file+":"+lineno+","+pos+": "+msg);
+	}
+
+	public static void warning(String fileName, String msg, String location) {
+		System.err.println(fileName+":"+location+": "+msg);
+		
+	}
+	
 	public static void globalError(String msg) {
 		nb_errors++;
 		System.err.println(msg);
@@ -54,4 +72,5 @@ public class MyError {
 			System.exit(1);
 		}
 	}
+
 }   

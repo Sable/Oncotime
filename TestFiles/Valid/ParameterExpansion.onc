@@ -10,11 +10,11 @@ population is
 	Sex: M, F
 	Birthyear: <myBirthyears>
 	Diagnosis: breast, prostate, <e> // can be strings or groups
-	PostalCode: h, h4, h4x
+	PostalCode: H4X
 
 period is
 	Years: 2012, 2012, 2014
-	Months: 1, 2, 3
+	Months: 01, 02, 03
 	Days: Mon, Tues, Wed, Thurs, Fri, Sat, Sun
 
 events are
