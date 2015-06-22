@@ -1,13 +1,34 @@
 
 
+############################################################
+# UTILITY METHODS	 		 							   #
+############################################################
+def clean(items):
+	return list(set(items))
+
+def getResult(actor_type, name):
+	return results.get_type(actor_type)[name]
+
+############################################################
+# OBJECT CLASSES	 		 							   #
+############################################################
+
 class Patient(object):
-	def __init__(self, pID, pSex, pBirthyear, pDiagnosis, pPostalcode):
+	def __init__(self, pID, pSex, pBirthyear, pPostalcode):
 		self.id = pID
 		self.sex = pSex
 		self.birthyear = pBirthyear
-		self.diagnosis = pDiagnosis
 		self.postalcode = pPostalcode
 		self.events = []
+		self.diagnosis = []
+		self.doctors = []
+
+	def __hash__(self):
+		return hash(self.id)
+
+	def __eq__(self, other):
+		if other == None: return False
+		else: return (self.id) == (other.id)
 
 	def __getitem__(self, field):
 		if field == "ID":
@@ -17,48 +38,76 @@ class Patient(object):
 		if field == "BIRTHYEAR":
 			return self.birthyear
 		if field == "DIAGNOSIS":
-			return str(self.diagnosis)
+			return self.diagnosis
 		if field == "POSTALCODE":
 			return self.postalcode
-		if field == "EVENTS":
-			return str(self.events)
+		if field == "DOCTORS" or field == "DOCTOR":
+			return self.doctors
 
-	def addPatientEvent(self, name, doc, time):
-		for event in self.events:
-			if event.name == name:
-				event.doctor += [doc]
-				event.doctor = list(set(event.doctor))
-				return
-		self.events.append(self.PatientEvent(name, doc, time))
+	def __repr__(self):
+		return str(self.id)
+
+	def __str__(self):
+		return "Patient (%s): %s born in %s with postalcode %s." % (str(self.id), self.sex, str(self.birthyear), self.postalcode)
+
+	def addDoctor(self, doctor):
+		self.doctors += doctor
+		self.doctors = clean(self.doctors)
+
+	def addDiagnosis(self, diagnosis):
+		self.diagnosis += diagnosis 
+		self.diagnosis = clean(self.diagnosis)
+	
+	def addEvent(self, event):
+		self.events += event 
+		self.events = clean(self.events)
 		self.events.sort(key=lambda x: x.time, reverse=False)
-
-	class PatientEvent(object):
-		def __init__(self, pName, pDoc, pTime):
-			self.name = pName 
-			self.doctor = [pDoc]
-			self.time = pTime
-
-		def __repr__(self):
-			return "%s with %s on %s" % (self.name, self.doctor, self.time)
 
 	@staticmethod
 	def getfields():
-		return ['ID', 'SEX', 'BIRTHYEAR', 'POSTALCODE', 'DIAGNOSIS', "EVENTS"]
+		return ['ID', 'SEX', 'BIRTHYEAR', 'POSTALCODE', 'DIAGNOSIS', "DOCTORS"]
 
 class Doctor(object):
 	def __init__(self, pID, pOncologist):
 		self.id = pID
 		self.oncologist = pOncologist
+		self.patients = []
+		self.diagnosis = []
 
 	def __getitem__(self, field):
 		if field == "ID":
 			return self.id
 		if field == "ONCOLOGIST":
 			return self.oncologist
+		if field == "PATIENTS":
+			return self.patients
+		if field == "DIAGNOSIS":
+			return self.diagnosis
+
+	def __hash__(self):
+		return hash(self.id)
+
+	def __eq__(self, other):
+		if other == None: return False
+		return (self.id) == (other.id)
+
+	def __repr__(self):
+		return str(self.id)
+
+	def __str__(self):
+		return "Doctor (%s): Oncologist: %s" % (str(self.id), str(self.oncologist))
+
+	def addPatient(self, patient):
+		self.patients += patient
+		self.patients = clean(self.patients)
+
+	def addDiagnosis(self, diagnosis):
+		self.diagnosis += diagnosis
+		self.diagnosis = clean(self.diagnosis)
 
 	@staticmethod
 	def getfields():
-		return ['ID', 'ONCOLOGIST']
+		return ['ID', 'ONCOLOGIST', 'PATIENTS', 'DIAGNOSIS']
 
 class Diagnosis(object):
 	def __init__(self, pDiagnosis):
@@ -68,9 +117,57 @@ class Diagnosis(object):
 		if field == "DIAGNOSIS":
 			return self.diagnosis
 
+	def __hash__(self):
+		return hash(self.diagnosis)
+
+	def __eq__(self, other):
+		if other == None: return False
+		return (self.diagnosis == other.diagnosis)
+
+	def __repr__(self):
+		return "\"" + str(self.diagnosis) + "\""
+
+	def __str__(self):
+		return "Diagnosis: %s" % (self.diagnosis)
+
 	@staticmethod
 	def getfields():
 		return ['DIAGNOSIS']
+
+class Event(object):
+	def __init__(self, pName, pTime, pPatient, pDoctor):
+		self.name = pName 
+		self.time = pTime 
+		self.patient = pPatient
+		self.doctor = pDoctor
+
+	def __getitem__(self, field):
+		if field == "NAME":
+			return self.name
+		if field == "TIME":
+			return self.time
+		if field == "PATIENT":
+			return self.patient
+		if field == "DOCTOR":
+			return self.doctor
+
+	def __hash__(self):
+		return hash(self.name + str(self.patient))
+
+	def __eq__(self, other):
+		if other == None: return False
+		return (self.name == other.name)
+
+	def __str__(self):
+		return str(self.name + " " + str(self.patient) + " " + str(self.doctor))
+
+	def addDoctor(self, doctor):
+		self.doctor += doctor
+		self.doctor = clean(self.doctor)
+
+	@staticmethod
+	def getfields():
+		return ["NAME", "TIME", "PATIENT", "DOCTOR"]
 
 class Results(object):
 	"""
@@ -87,6 +184,26 @@ class Results(object):
 			return self.doctors 
 		if type == "DIAGNOSIS":
 			return self.diagnosis
+		if type == "EVENT":
+			return self.events
+
+	def add_actor(self, actor, type):
+		actors = self.get_type(type)
+
+		if actors.get(actor, None) == None:
+			actors[actor] = actor
+		else:
+			if type == "PATIENTS" or type == "PATIENT":
+				actors[actor].addDoctor(actor.doctors)
+				actors[actor].addDiagnosis(actor.diagnosis)
+				actors[actor].addEvent(actor.events)
+			if type == "DOCTOR":
+				actors[actor].addPatient(actor.patients)
+				actors[actor].addDiagnosis(actor.diagnosis)
+			if type == "EVENT":
+				actors[actor].addDoctor(actor.doctor)
+
+
 
 	def __init__(self, raw_data):
 		
@@ -94,66 +211,56 @@ class Results(object):
 		self.doctors = {}
 		self.diagnosis = {}
 		self.events = {}
+		
+		def incorporateData(self, item, event):
 
-		def add_patient(self, item, event):
+			dataNotFound =  "Unknown"
+
+			eventName = 	event 
+			patId 	= 		item.get('PatientSerNum', dataNotFound)
+			sex = 			item.get('Sex', dataNotFound)
+			birthyear = 	item.get('DateOfBirth', dataNotFound)
+			description = 	item.get('Description', dataNotFound)
+			postalcode = 	item.get('PostalCode', dataNotFound)
+			docId = 		item.get('DoctorSerNum', dataNotFound)
+			oncologist = 	item.get('OncologistFlag')
+			time = 			item.get('TimeStamp', dataNotFound)
+			diagnosis = 	item.get('Description', dataNotFound)
+
+			# Construct the Patient Object.
+			patient = Patient(patId, sex, birthyear, postalcode) 
 			
-			# Get all the required information
-			id = item['PatientSerNum']
-			sex = item['Sex']
-			birthyear = item['DateOfBirth']
-			diagnosis = [item['Description']]
-			postalcode = item['PostalCode']
-
-			# Get all the required information for the patient event. 
-			name = event 
-			docId = item['DoctorSerNum']
-			time = item['TimeStamp']
+			# Construct the Doctor Object. 
+			doctor = Doctor(docId, oncologist)
 			
-			# Construct the patient object. 
-			patient = Patient(id, sex, birthyear, diagnosis, postalcode)
-			patient.addPatientEvent(name, docId, time)
+			# Construct the Diagnosis Object.
+			diagnosis = Diagnosis(description)
 
-			# If It already exists, we augment it's information. 
-			old_patient = self.patients.get(id, None)
-
-			if old_patient == None:
-				self.patients[patient.id] = patient 
-			else:
-				old_patient.diagnosis += diagnosis
-				old_patient.diagnosis = list(set(old_patient.diagnosis))
-				old_patient.addPatientEvent(name, docId, time)
-
-		def add_doctor(self, item):
+			# Construct the events object 
+			event = Event(eventName, time, patId, [doctor])
 			
-			# Get all the required information
-			oncologist = item['OncologistFlag']
-			id = item['DoctorSerNum']
+			# Incorporate the data between objects.
+			patient.addDoctor([doctor])
+			patient.addDiagnosis([diagnosis])
+			patient.addEvent([event])
+			doctor.addPatient([patient])
+			doctor.addDiagnosis([diagnosis])
 
-			# Construct the doctor object. 
-			doctor = Doctor(id, oncologist)
+			# Add the items to our Hash Tables.
+			self.add_actor(patient, "PATIENT")
+			self.add_actor(doctor, "DOCTOR")
+			self.add_actor(diagnosis, "DIAGNOSIS")
+			self.add_actor(event, "EVENT")
 
-			# If it already exists, we augment it's information. 
-			old_doctor = self.doctors.get(id, None)
-
-			if(old_doctor == None):
-				self.doctors[doctor.id] = doctor 
-
-		def add_diagnosis(self, item):
-
-			# Add all the required information. 
-			diagnosis_name = item['Description']
-
-			# Construct the diagnosis object. 
-			diagnosisObj = Diagnosis(diagnosis_name)
-
-			self.diagnosis[diagnosisObj.diagnosis] = diagnosisObj
-
+		# Add the data to our hashes. 
 		for event in raw_data:
 			for item in raw_data[event]: 
-				add_patient(self, item, event)
-				add_doctor(self, item)
-				add_diagnosis(self, item)
-				# add_event(self, item)
+				incorporateData(self, item, event)
+
+
+############################################################
+# FUNCTIONAL METHODS 		 							   #
+############################################################
 
 def get_results(events):
 	"""
@@ -209,6 +316,10 @@ def get_results(events):
 
 	return results 
 
+############################################################
+# COMPUTATION METHODS 		 							   #
+############################################################
+
 def tableDecleration(actorType, field, results):
 	"""
 		Returns a dictionary that counts the actors by their fields.  
@@ -221,10 +332,10 @@ def tableDecleration(actorType, field, results):
 	for key in actor_table:
 		value = actor_table[key][field]
 
-		if table.get(value, None) == None:
-			table[value] = 1
+		if table.get(str(value), None) == None:
+			table[str(value)] = 1
 		else:
-			table[value] += 1
+			table[str(value)] += 1
 
 	return table
 
@@ -248,13 +359,19 @@ def printTable(table):
 
 	print pretty_table
 
-def printActor(results, name, actor_type, attr_list = None):
+def printActor(results, name, actor_type, tabCount = 0):
 	"""
 		Function handles printing actors, their attributes, and nested actors. 
 	"""
+	tabCount -= 1; 
 
-	def getResult(actor_type, name, att):
-		return str(results.get_type(actor_type)[name][att])
+	if tabCount == 0:
+		printHeader(str(getResult(actor_type, name)))
+	else:
+		print (("\t") * tabCount) + str(getResult(actor_type, name))
+	
+
+def printActorAttributes(results, name, actor_type, attr_list = None, tabCount=0):
 
 	# If we are printing a Patient
 	if actor_type == "PATIENT":
@@ -271,13 +388,13 @@ def printActor(results, name, actor_type, attr_list = None):
 		if attr_list == None:
 			attr_list = Doctor.getfields()
 
-	# Print the content
-	printHeader(actor_type)	
-			
-	for att in attr_list:
-		print "{0:<12}: {1}".format(att, getResult(actor_type, name, att))
+	print_string = actor_type.title() + ": "
 
-	printSpace()
+	for attr in attr_list:
+		print_string += attr.title() + ": " + str(getResult(actor_type, name)[attr]) + " "
+
+	print print_string
+
 
 def printPatientTimeline(results, name):
 	printHeader("Patient Timeline for: " + str(name))
@@ -292,7 +409,15 @@ def printPatientTimeline(results, name):
 def printLength(table):
 	print "Table of {0} counted by {1} has length {2}".format(table["Actor"], table["Field"], len(table) - 2)
 
+def printTableItem(table, item):
+ 	if item != "Field" and item != "Actor":
+		print "{0:<25}: {1:<25}".format(str(item), str(table[item]))
 
 # We want to return a Hashmap of all the information we want.
 results = Results(get_results(events))
+
+############################################################
+# GENERATED COMPUTATIONS	 		 					   #
+############################################################
+
 

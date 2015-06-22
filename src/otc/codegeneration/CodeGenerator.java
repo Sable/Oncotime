@@ -8,9 +8,13 @@ import otc.analysis.DepthFirstAdapter;
 import otc.drivers.MyError;
 import otc.drivers.ProgramFile;
 import otc.node.AForeachComputation;
+import otc.node.AForeachSetComputation;
+import otc.node.AForeachTableComputation;
+import otc.node.AForeachTableSetComputation;
 import otc.node.APrintAttrComputation;
 import otc.node.APrintComputation;
 import otc.node.APrintLengthComputation;
+import otc.node.APrintTableitemComputation;
 import otc.node.APrintTimelineComputation;
 import otc.node.ATableComputation;
 import otc.node.Node;
@@ -31,9 +35,6 @@ public class CodeGenerator extends DepthFirstAdapter
 	
 	// Will contain and house the generatedCode. 
 	private static StringBuilder generatedCode = new StringBuilder();
-	
-	// Will tell us how many times to indent. For Python. 
-	private static int indentNumber = 0; 
 	
 	// Will tell us how many foreaches have occured. For code generation. 
 	private static int numberOfForeaches = 0;
@@ -368,7 +369,7 @@ public class CodeGenerator extends DepthFirstAdapter
 	 */
 	private void codeGenTabs()
 	{
-		for(int i = 0; i < indentNumber; i++) generatedCode.append("\t"); 
+		for(int i = 0; i < level; i++) generatedCode.append("\t"); 
 	}
 	
 	/**
@@ -395,6 +396,7 @@ public class CodeGenerator extends DepthFirstAdapter
 	{
 		return (quote + s + quote).trim();
 	}
+
 
 	
 	/*********************************************************************************			
@@ -425,8 +427,49 @@ public class CodeGenerator extends DepthFirstAdapter
 			level++;
 			parentVariable.push(valueName); 
 			
-			// So all following computations are printed accordingly. 
-			indentNumber++; 
+			// So all following computations are printed accordingly.  
+			genCodeNewLineWithTabs();
+		}
+		else
+		{
+			// Get the variable name we are interested in. 
+			String parentVariableName = parentVariable.pop(); 
+			
+			// Generate the appropriate code. 
+			generatedCode.append("for " + variableName + " in " + parentVariableName + "[" + quotes(actorName) + "]: ");
+			
+			// Increment the level, and store the variable name so we can use it in further foreaches.
+			level++; 
+			parentVariable.push(variableName);
+			
+			// So all the following computations are printed accordingly.  
+			genCodeNewLineWithTabs(); 
+		}
+		
+		node.getComputation().apply(this);
+		level--; 
+	}
+	
+	public void caseAForeachSetComputation(AForeachSetComputation node)
+	{
+		// We need to keep track of the number of foreaches in order to get the appropriate iterator nodes.
+		numberOfForeaches++;
+		
+		String actorName = node.getActor().toString().toUpperCase().trim(); 
+		String variableName = node.getTIdentifier().getText().toString().trim();
+		String valueName = variableName + "val"; 
+		
+		// Top Level Foreach
+		if(level == 0)
+		{
+			// Generate the appropriate code.
+			generatedCode.append("for " + variableName + ", " + valueName + " in results.get_type(" + quotes(actorName) + ").iteritems():");
+			
+			// Increment the level, and store the variable name so we can use it in further foreaches. 
+			level++;
+			parentVariable.push(valueName); 
+			
+			// So all following computations are printed accordingly.  
 			genCodeNewLineWithTabs();
 		}
 		else
@@ -442,14 +485,52 @@ public class CodeGenerator extends DepthFirstAdapter
 			parentVariable.push(variableName);
 			
 			// So all the following computations are printed accordingly. 
-			indentNumber++; 
 			genCodeNewLineWithTabs(); 
 		}
 		
-		node.getComputation().apply(this);
-		indentNumber--; 
+		node.getComputationList().apply(this);
+		level--; 
 	}
 	
+	@Override
+	public void caseAForeachTableComputation(AForeachTableComputation node)
+	{
+		// We want to keep track of the number of Foreaches.
+		numberOfForeaches++;
+		
+		// Get the required information out of the node. 
+		String tableName = node.getVariable().getText();  
+		String iteratorName = node.getIterator().getText(); 
+		
+		// Generate the appropriate code.
+		generatedCode.append("for " + iteratorName +  " in " + tableName + ": ");
+		level++;
+		genCodeNewLineWithTabs(); 
+		
+		// Generate the interior computations. 
+		node.getComputation().apply(this);
+		level--; 
+	}
+	
+	@Override
+	public void caseAForeachTableSetComputation(AForeachTableSetComputation node)
+	{
+		// We want to keep track of the number of Foreaches.
+		numberOfForeaches++;
+		
+		// Get the required information out of the node. 
+		String tableName = node.getVariable().getText();  
+		String iteratorName = node.getIterator().getText(); 
+		
+		// Generate the appropriate code.
+		generatedCode.append("for " + iteratorName +  " in " + tableName + ": ");
+		level++;
+		genCodeNewLineWithTabs(); 
+		
+		// Generate the interior computations. 
+		node.getComputationList().apply(this);
+		level--; 
+	}
 	
 	
 	/***********************************
@@ -472,30 +553,36 @@ public class CodeGenerator extends DepthFirstAdapter
 	@Override
 	public void caseAPrintComputation(APrintComputation node)
 	{
+		// If it's a Foreach
 		Symbol printSymbol = Stage.symbolsGetForeachSymbol(node.getTIdentifier().toString().trim(), numberOfForeaches);
+		
+		// Otherwise it's a table
+		if(printSymbol == null) printSymbol = Stage.symbolsGet(node.getTIdentifier().toString().trim()); 
 		
 		switch(printSymbol.getObjectType())
 		{
 			case Table: 
 			{
 				generatedCode.append("printTable("+printSymbol.getName()+")");
+				genCodeNewLineWithTabs();
 				break;
 			}
 			case Patient:
 			{
-				generatedCode.append("printActor(results, "+printSymbol.getName()+ ", " + quotes("PATIENT") + ")");
-				
-				System.out.println(generatedCode); 
+				generatedCode.append("printActor(results, "+printSymbol.getName()+ ", " + quotes("PATIENT") + ", tabCount=" + level + ")");
+				genCodeNewLineWithTabs(); 
 				break;
 			}
 			case Diagnosis:
 			{
-				generatedCode.append("printActor(results, "+printSymbol.getName()+", " + quotes("DIAGNOSIS") + ")"); 
+				generatedCode.append("printActor(results, "+printSymbol.getName()+", " + quotes("DIAGNOSIS") + ", tabCount=" + level + ")");
+				genCodeNewLineWithTabs();
 				break;
 			}
 			case Doctor:
 			{
-				generatedCode.append("printActor(results,  "+printSymbol.getName()+", " + quotes("DOCTOR") + ")");  
+				generatedCode.append("printActor(results,  "+printSymbol.getName()+", " + quotes("DOCTOR") + ", tabCount=" + level + ")");
+				genCodeNewLineWithTabs();
 				break; 
 			}
 			default:
@@ -524,17 +611,20 @@ public class CodeGenerator extends DepthFirstAdapter
 		{
 			case Patient:
 			{
-				generatedCode.append("printActor(results, "+printSymbol.getName()+ ", " + quotes("PATIENT") + ", " + attributes +")");
+				generatedCode.append("printActorAttributes(results, "+printSymbol.getName()+ ", " + quotes("PATIENT") + ", " + attributes + ", tabCount=" + level + ")");
+				genCodeNewLineWithTabs();
 				break;
 			}
 			case Diagnosis:
 			{
-				generatedCode.append("printActor(results, "+printSymbol.getName()+ ", " + quotes("DIAGNOSIS") + ", " + attributes +")"); 
+				generatedCode.append("printActorAttributes(results, "+printSymbol.getName()+ ", " + quotes("DIAGNOSIS") + ", " + attributes + ", tabCount=" + level + ")");
+				genCodeNewLineWithTabs();
 				break;
 			}
 			case Doctor:
 			{
-				generatedCode.append("printActor(results, "+printSymbol.getName()+ ", " + quotes("DIAGNOSIS") + ", " + attributes +")");  
+				generatedCode.append("printActorAttributes(results, "+printSymbol.getName()+ ", " + quotes("DIAGNOSIS") + ", " + attributes + ", tabCount=" + level + ")");
+				genCodeNewLineWithTabs();
 				break; 
 			}
 			default:
@@ -548,14 +638,22 @@ public class CodeGenerator extends DepthFirstAdapter
 	@Override
 	public void caseAPrintTimelineComputation(APrintTimelineComputation node)
 	{
-		generatedCode.append("printPatientTimeline(results, " + node.getTIdentifier().getText() + ")"); 
+		generatedCode.append("printPatientTimeline(results, " + node.getTIdentifier().getText() + ")");
+		genCodeNewLineWithTabs();
 	}
 	
 	@Override
 	public void caseAPrintLengthComputation(APrintLengthComputation node)
 	{
 		generatedCode.append("printLength(" + node.getTIdentifier().getText() + ")"); 
-		System.out.println(generatedCode); 
+		genCodeNewLineWithTabs();
+	}
+	
+	@Override 
+	public void caseAPrintTableitemComputation(APrintTableitemComputation node)
+	{
+		generatedCode.append("printTableItem(" + node.getVariable().toString().trim() + "," + node.getIterator().toString().trim() + ")"); 
+		genCodeNewLineWithTabs(); 
 	}
 	
 	

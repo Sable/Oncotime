@@ -57,8 +57,16 @@ public class Stage
 	}
 
 	public static Symbol symbolsGetForeachSymbol(String key, int foreachLevel)
-	{
-		return symbols.get(key +"_"+foreachLevel); 
+	{		
+		Symbol s = null; 
+		
+		while(s == null && foreachLevel >= 0)
+		{
+			s = symbols.get(key + "_" + foreachLevel); 
+			foreachLevel--;
+		}
+		
+		return s;  
 	}
 	
 	public static void incrementForeach()

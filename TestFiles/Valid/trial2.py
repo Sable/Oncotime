@@ -10,7 +10,10 @@ filters = "and (Patient.DateOfBirth = 1960) and (Diagnosis.Description REGEXP \"
 # UTILITY METHODS	 		 							   #
 ############################################################
 def clean(items):
-	items = list(set(items))
+	return list(set(items))
+
+def getResult(actor_type, name):
+	return results.get_type(actor_type)[name]
 
 ############################################################
 # OBJECT CLASSES	 		 							   #
@@ -44,22 +47,31 @@ class Patient(object):
 			return self.diagnosis
 		if field == "POSTALCODE":
 			return self.postalcode
-		if field == "EVENTS":
-			return self.events
-		if field == "DOCTORS":
+		if field == "DOCTORS" or field == "DOCTOR":
 			return self.doctors
+
+	def __repr__(self):
+		return str(self.id)
+
+	def __str__(self):
+		return "Patient (%s): %s born in %s with postalcode %s." % (str(self.id), self.sex, str(self.birthyear), self.postalcode)
 
 	def addDoctor(self, doctor):
 		self.doctors += doctor
-		clean(self.doctors)
+		self.doctors = clean(self.doctors)
 
 	def addDiagnosis(self, diagnosis):
-		self.diagnosis += diagnosis
-		clean(self.diagnosis)
+		self.diagnosis += diagnosis 
+		self.diagnosis = clean(self.diagnosis)
+	
+	def addEvent(self, event):
+		self.events += event 
+		self.events = clean(self.events)
+		self.events.sort(key=lambda x: x.time, reverse=False)
 
 	@staticmethod
 	def getfields():
-		return ['ID', 'SEX', 'BIRTHYEAR', 'POSTALCODE', 'DIAGNOSIS', "EVENTS", "DOCTORS"]
+		return ['ID', 'SEX', 'BIRTHYEAR', 'POSTALCODE', 'DIAGNOSIS', "DOCTORS"]
 
 class Doctor(object):
 	def __init__(self, pID, pOncologist):
@@ -73,6 +85,10 @@ class Doctor(object):
 			return self.id
 		if field == "ONCOLOGIST":
 			return self.oncologist
+		if field == "PATIENTS":
+			return self.patients
+		if field == "DIAGNOSIS":
+			return self.diagnosis
 
 	def __hash__(self):
 		return hash(self.id)
@@ -81,17 +97,23 @@ class Doctor(object):
 		if other == None: return False
 		return (self.id) == (other.id)
 
+	def __repr__(self):
+		return str(self.id)
+
+	def __str__(self):
+		return "Doctor (%s): Oncologist: %s" % (str(self.id), str(self.oncologist))
+
 	def addPatient(self, patient):
 		self.patients += patient
-		clean(self.patients)
+		self.patients = clean(self.patients)
 
 	def addDiagnosis(self, diagnosis):
 		self.diagnosis += diagnosis
-		clean(self.diagnosis)
+		self.diagnosis = clean(self.diagnosis)
 
 	@staticmethod
 	def getfields():
-		return ['ID', 'ONCOLOGIST']
+		return ['ID', 'ONCOLOGIST', 'PATIENTS', 'DIAGNOSIS']
 
 class Diagnosis(object):
 	def __init__(self, pDiagnosis):
@@ -108,9 +130,53 @@ class Diagnosis(object):
 		if other == None: return False
 		return (self.diagnosis == other.diagnosis)
 
+	def __repr__(self):
+		return "\"" + str(self.diagnosis) + "\""
+
+	def __str__(self):
+		return "Diagnosis: %s" % (self.diagnosis)
+
 	@staticmethod
 	def getfields():
 		return ['DIAGNOSIS']
+
+class Event(object):
+	def __init__(self, pName, pTime, pPatient, pDoctor):
+		self.name = pName 
+		self.time = pTime 
+		self.patient = pPatient
+		self.doctor = pDoctor
+
+	def __getitem__(self, field):
+		if field == "NAME":
+			return self.name
+		if field == "TIME":
+			return self.time
+		if field == "PATIENT":
+			return self.patient
+		if field == "DOCTOR":
+			return self.doctor
+
+	def __hash__(self):
+		return hash(self.name + str(self.patient))
+
+	def __eq__(self, other):
+		if other == None: return False
+		return (self.name == other.name)
+
+	def __str__(self):
+		return str(self.name + " " + str(self.patient) + " " + str(self.doctor))
+
+	def __repr__(self):
+		return str(self.name + " " + str(self.patient) + " " + str(self.doctor))
+
+	def addDoctor(self, doctor):
+		self.doctor += doctor
+		self.doctor = clean(self.doctor)
+
+	@staticmethod
+	def getfields():
+		return ["NAME", "TIME", "PATIENT", "DOCTOR"]
 
 class Results(object):
 	"""
@@ -127,11 +193,11 @@ class Results(object):
 			return self.doctors 
 		if type == "DIAGNOSIS":
 			return self.diagnosis
+		if type == "EVENT":
+			return self.events
 
 	def add_actor(self, actor, type):
 		actors = self.get_type(type)
-
-		print actor
 
 		if actors.get(actor, None) == None:
 			actors[actor] = actor
@@ -139,9 +205,13 @@ class Results(object):
 			if type == "PATIENTS" or type == "PATIENT":
 				actors[actor].addDoctor(actor.doctors)
 				actors[actor].addDiagnosis(actor.diagnosis)
+				actors[actor].addEvent(actor.events)
 			if type == "DOCTOR":
 				actors[actor].addPatient(actor.patients)
 				actors[actor].addDiagnosis(actor.diagnosis)
+			if type == "EVENT":
+				actors[actor].addDoctor(actor.doctor)
+
 
 
 	def __init__(self, raw_data):
@@ -166,8 +236,6 @@ class Results(object):
 			time = 			item.get('TimeStamp', dataNotFound)
 			diagnosis = 	item.get('Description', dataNotFound)
 
-			print "Event: %s for Patient: %s", (event, str(patId))  
-
 			# Construct the Patient Object.
 			patient = Patient(patId, sex, birthyear, postalcode) 
 			
@@ -176,22 +244,26 @@ class Results(object):
 			
 			# Construct the Diagnosis Object.
 			diagnosis = Diagnosis(description)
+
+			# Construct the events object 
+			event = Event(eventName, time, patId, [doctor])
 			
 			# Incorporate the data between objects.
-			patient.addDoctor(doctor)
-			patient.addDiagnosis(diagnosis)
-			doctor.addPatient(patient)
-			doctor.addDiagnosis(diagnosis)
+			patient.addDoctor([doctor])
+			patient.addDiagnosis([diagnosis])
+			patient.addEvent([event])
+			doctor.addPatient([patient])
+			doctor.addDiagnosis([diagnosis])
 
 			# Add the items to our Hash Tables.
 			self.add_actor(patient, "PATIENT")
 			self.add_actor(doctor, "DOCTOR")
 			self.add_actor(diagnosis, "DIAGNOSIS")
+			self.add_actor(event, "EVENT")
 
 		# Add the data to our hashes. 
 		for event in raw_data:
 			for item in raw_data[event]: 
-				print event
 				incorporateData(self, item, event)
 
 
@@ -269,10 +341,10 @@ def tableDecleration(actorType, field, results):
 	for key in actor_table:
 		value = actor_table[key][field]
 
-		if table.get(value, None) == None:
-			table[value] = 1
+		if table.get(str(value), None) == None:
+			table[str(value)] = 1
 		else:
-			table[value] += 1
+			table[str(value)] += 1
 
 	return table
 
@@ -296,13 +368,19 @@ def printTable(table):
 
 	print pretty_table
 
-def printActor(results, name, actor_type, attr_list = None, tabCount = 0):
+def printActor(results, name, actor_type, tabCount = 0):
 	"""
 		Function handles printing actors, their attributes, and nested actors. 
 	"""
+	tabCount -= 1; 
 
-	def getResult(actor_type, name, att):
-		return str(results.get_type(actor_type)[name][att])
+	if tabCount == 0:
+		printHeader(str(getResult(actor_type, name)))
+	else:
+		print (("\t") * tabCount) + str(getResult(actor_type, name))
+	
+
+def printActorAttributes(results, name, actor_type, attr_list = None, tabCount=0):
 
 	# If we are printing a Patient
 	if actor_type == "PATIENT":
@@ -319,13 +397,13 @@ def printActor(results, name, actor_type, attr_list = None, tabCount = 0):
 		if attr_list == None:
 			attr_list = Doctor.getfields()
 
-	# Print the content
-	printHeader(actor_type)	
-			
-	for att in attr_list:
-		print "{0:<12}: {1}".format(att, getResult(actor_type, name, att))
+	print_string = actor_type.title() + ": "
 
-	printSpace()
+	for attr in attr_list:
+		print_string += attr.title() + ": " + str(getResult(actor_type, name)[attr]) + " "
+
+	print print_string
+
 
 def printPatientTimeline(results, name):
 	printHeader("Patient Timeline for: " + str(name))
@@ -340,26 +418,107 @@ def printPatientTimeline(results, name):
 def printLength(table):
 	print "Table of {0} counted by {1} has length {2}".format(table["Actor"], table["Field"], len(table) - 2)
 
+def printTableItem(table, item):
+ 	if item != "Field" and item != "Actor":
+		print "{0:<25}: {1:<25}".format(str(item), str(table[item]))
 
 # We want to return a Hashmap of all the information we want.
 results = Results(get_results(events))
 
 
 ############################################################
-# GENERATED COMPUTATIONS 		 						   #
+# SEQUENCE UTILITY METHODS	 		 					   #
 ############################################################
 
-# Normal Print
-# Timeline Print
-# Values Print
-# Nested Print
-# Table Item Print
-# Sequences(!!)
-# Tables
+class Sequence(object):
+	States = ["Normal", "Or", "Any", "End"]
 
+	def __init__(self, pSequence, pPatientId):
+		# We keep track of the global sequence in each sequence. 
+		self.globSequence = pSequence
+		# We take the first event items type. 
+		self.currentState = pSequence[0][0]
+		# We take the first event items list of events. 
+		self.nextEvents   = pSequence[0][1]
+		# We initialize this sequence list to empty.
+		self.sequences    = []
+		# We want to keep track of which sequence item we're on. 
+		#  This way we'll know if we have to look at the next item. 
+		self.currentItemNumber = 0
+		# We need to keep track of the patient this event is for. 
+		self.patientId = pPatientId
 
+	def add_item(self, event):
 
+		def validateEvent(state, name, id):
+			return self.currentState == state and event.name in self.nextEvents and event.patient == self.patientId
 
-for p, pval in results.get_type("PATIENT").iteritems():
-	for d in pval["DIAGNOSIS"]: 
-		printActor(results,  p, "PATIENT")
+		def validateFutureEvent(state, name, id):
+			if self.currentState == state:
+				nextItem = self.currentItemNumber + 1
+				nextState = self.globSequence[nextItem][0]
+				nextEvents = self.globSequence[nextItem][1]
+			else:
+				return False
+
+		def incorporateAndAdvance(event):
+			self.currentItemNumber += 1
+			self.sequences += [event]
+			self.currentState = self.globSequence[self.currentItemNumber][0]
+			self.nextEvents =  self.globSequence[self.currentItemNumber][1]
+
+		def incorporateAndStay(event):
+			self.sequences += [event]
+
+		# Simplest form, just see if the event name matches. 
+		if validateEvent("Normal", event.name, event.patient):
+			incorporateAndAdvance(event)
+		
+		# If it's an or we want to take it and go. 
+		if validateEvent("Or", event.name, event.patient):
+			incorporateAndAdvance(event)
+
+		# If it's an in any order, we need to be more careful. 
+		# Either the event could be in our list, or it could be in the future.
+		if validateEvent("Any", event.name, event.patient):
+			incorporateAndStay(event)
+		if validateFutureEvent("Any", event.name, event.patient):
+			incorporateAndAdvance(event)
+
+def get_events_as_list():
+	event_list = []
+	for event in results.get_type("EVENT"):
+		event_list += [results.get_type("EVENT")[event]]
+	return event_list
+
+def findSequences(sequence):
+	# These are all the events in our Program.
+	# We want them sorted by time. 
+	global_event_list = get_events_as_list()
+	global_event_list.sort(key=lambda r: r.time)
+
+	# We want a hashmap from Patient ID to Sequence Objects. 
+	patSeq = {}
+
+	# Here we do the actual work. 
+	for event in global_event_list:
+
+		patientId = event.patient
+
+		# Our patient does not have sequences associated with them yet.
+		if patSeq.get(patientId, None) == None:
+			patSeq[patientId] = Sequence(sequence, patientId)
+	
+		# Now we simple add the event. 
+		patSeq[patientId].add_item(event)
+
+	for key, val in patSeq.iteritems():
+		print val.sequences
+
+############################################################
+# GENERATED COMPUTATIONS	 		 					   #
+############################################################
+
+sequence = [("Normal", ["patient_scheduled"]), ("Any", ["ct_sim_completed", "ct_sim_booked"]), ("End", [])]
+
+findSequences(sequence)
