@@ -51,7 +51,7 @@ public class Symbol
 	public static enum ObjectType {Group, Actor, 
 		TypedListValue, TypedName, Parameter, Patient, Doctor, 
 		Diagnosis, Table, List, Sequence, Iterator, 
-		Filter}
+		Filter, SequenceItem}
 	
 	// We store the type of the object. 
 	protected ObjectType objectType; 

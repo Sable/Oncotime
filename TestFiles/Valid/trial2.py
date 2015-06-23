@@ -6,6 +6,8 @@ ontology={"consult_referral_received": {"info":["Task.LastUpdated as TimeStamp",
 events = ["*"]
 filters = "and (Patient.DateOfBirth = 1960) and (Diagnosis.Description REGEXP \"breast\" or Diagnosis.Description REGEXP \"prostate\" or Diagnosis.Description REGEXP \"liver\") and (Patient.Sex REGEXP \"Male\") "
 
+
+
 ############################################################
 # UTILITY METHODS	 		 							   #
 ############################################################
@@ -431,9 +433,9 @@ results = Results(get_results(events))
 ############################################################
 
 class Sequence(object):
-	States = ["Normal", "Or", "Any", "End"]
+	States = ["Normal", "Or", "Any", "Not", "End", "Terminated"]
 
-	def __init__(self, pSequence, pPatientId):
+	def __init__(self, pSequence = None, pPatientId = None):
 		# We keep track of the global sequence in each sequence. 
 		self.globSequence = pSequence
 		# We take the first event items type. 
@@ -441,12 +443,24 @@ class Sequence(object):
 		# We take the first event items list of events. 
 		self.nextEvents   = pSequence[0][1]
 		# We initialize this sequence list to empty.
-		self.sequences    = []
+		self.eventList    = []
 		# We want to keep track of which sequence item we're on. 
 		#  This way we'll know if we have to look at the next item. 
 		self.currentItemNumber = 0
 		# We need to keep track of the patient this event is for. 
 		self.patientId = pPatientId
+
+	def __repr__(self):
+		return str(self.eventList)
+
+	def selfCopy(self, event):
+		seq = Sequence(self.globSequence, self.patientId)
+		seq.currentState = self.currentState
+		seq.nextEvents = self.nextEvents[:]
+		seq.eventList = self.eventList[:]
+		seq.currentItemNumber = self.currentItemNumber
+		seq.currentState = self.currentState 
+		return seq
 
 	def add_item(self, event):
 
@@ -458,17 +472,28 @@ class Sequence(object):
 				nextItem = self.currentItemNumber + 1
 				nextState = self.globSequence[nextItem][0]
 				nextEvents = self.globSequence[nextItem][1]
+				if name in nextEvents: return True
 			else:
 				return False
 
-		def incorporateAndAdvance(event):
-			self.currentItemNumber += 1
-			self.sequences += [event]
-			self.currentState = self.globSequence[self.currentItemNumber][0]
-			self.nextEvents =  self.globSequence[self.currentItemNumber][1]
+		def incorporateAndAdvance(event, double = False):
+			if double == False:
+				self.currentItemNumber += 1
+				self.eventList += [event]
+				self.currentState = self.globSequence[self.currentItemNumber][0]
+				self.nextEvents =  self.globSequence[self.currentItemNumber][1]
+			else:
+				self.currentItemNumber += 2
+				self.eventList += [event]
+				self.currentState = self.globSequence[self.currentItemNumber][0]
+				self.nextEvents =  self.globSequence[self.currentItemNumber][1]
 
 		def incorporateAndStay(event):
-			self.sequences += [event]
+			self.eventList += [event]
+
+		def terminateSequence():
+			self.currentState = "Terminated"
+
 
 		# Simplest form, just see if the event name matches. 
 		if validateEvent("Normal", event.name, event.patient):
@@ -476,14 +501,60 @@ class Sequence(object):
 		
 		# If it's an or we want to take it and go. 
 		if validateEvent("Or", event.name, event.patient):
+			oldSeq = self.selfCopy(event)
 			incorporateAndAdvance(event)
+			return oldSeq
 
 		# If it's an in any order, we need to be more careful. 
 		# Either the event could be in our list, or it could be in the future.
 		if validateEvent("Any", event.name, event.patient):
+			oldSeq = self.selfCopy(event)
 			incorporateAndStay(event)
+			return oldSeq
 		if validateFutureEvent("Any", event.name, event.patient):
-			incorporateAndAdvance(event)
+			oldSeq = self.selfCopy(event)
+			incorporateAndAdvance(event, double = True)
+			return oldSeq
+
+		# If it's a not item, we do something similar to Any. 
+		#  If the item occurrs, then we need to terminate our sequence. 
+		#  Else, we need to check if the current event is next in line somewhere. 
+		if validateEvent("Not", event.name, event.patient):
+			terminateSequence()
+		if validateFutureEvent("Not", event.name, event.patient):
+			incorporateAndAdvance(event, double = True)
+
+class SequenceList(object):
+	def __init__(self, pSequence, pPatientId):
+		self.sequences = []
+		self.sequence  = pSequence
+		self.patient   = pPatientId
+
+		self.sequences += [Sequence(pSequence, pPatientId)]
+
+	def add_item(self, event):
+	
+		# Confirm the validity of the patient. 		
+		if event.patient != self.patient: return
+
+		# For each sequence in our list, we want to add the event if applicable. 
+		# If it's a normal event, we simply add it if it's the next event we want. 
+		# If it's an OR event, we add it if it's in the set of events we want.
+		# 	We then create a duplicate less the event we just added. 
+		# If it's an AND event, we add it if it's in the set of events we want. 
+		# 	We then create a duplicate less the event we just added. 
+		new_branches = []	# The new branches must be added at the end. 
+
+		for seq in self.sequences:
+			if seq.currentState == "Normal":
+				seq.add_item(event)
+			else:
+				oldSeq = seq.add_item(event)
+				if oldSeq != None:
+					new_branches += [oldSeq]
+
+		# We finall add all our new branches. 
+		self.sequences += new_branches
 
 def get_events_as_list():
 	event_list = []
@@ -507,18 +578,49 @@ def findSequences(sequence):
 
 		# Our patient does not have sequences associated with them yet.
 		if patSeq.get(patientId, None) == None:
-			patSeq[patientId] = Sequence(sequence, patientId)
+			patSeq[patientId] = SequenceList(sequence, patientId)
 	
 		# Now we simple add the event. 
 		patSeq[patientId].add_item(event)
 
+	# This is what will contain the clean and returnable sequence lists.
+	sequenceLists = {}
+
 	for key, val in patSeq.iteritems():
-		print val.sequences
+		sequenceLists[key] = []
+
+		for v in val.sequences:
+			if v.currentState == "End":
+				sequenceLists[key] += [v]
+
+			if v.currentState == "Any" and (v.currentItemNumber == (len(sequence) -2)):
+				sequenceLists[key] += [v]
+
+	return sequenceLists
+
+def printSequenceItem(sequenceList):
+
+	if sequenceList == []: return 
+
+	for sequence in sequenceList:
+		sequenceString = "{0:<5}: ".format(str(sequence.patientId))
+
+		for event in sequence.eventList:
+			date = str(event.time.strftime('%b %d %Y'))
+			patient = str(event.patient)
+			doctors = str(event.doctor)
+			name    = str(event.name)
+
+			sequenceString += ("{0:<10} {1:17} => ".format(date, name))
+
+		sequenceString += "END"
+		print sequenceString
 
 ############################################################
 # GENERATED COMPUTATIONS	 		 					   #
 ############################################################
 
-sequence = [("Normal", ["patient_scheduled"]), ("Any", ["ct_sim_completed", "ct_sim_booked"]), ("End", [])]
-
-findSequences(sequence)
+s = findSequences([("Or", ["ct_sim_booked", ]), ("Or", ["patient_arrives", "ct_sim_completed" ]),  ("End", [] )])
+for t, tval in s.iteritems():
+	printSequenceItem(tval)
+	

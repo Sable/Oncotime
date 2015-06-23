@@ -31,16 +31,8 @@ population is
 
 // --- Computations --- 
 {
-	foreach Patient p
-	{
-		print p
-		foreach Doctor d
-		{
-			print d
-			foreach Diagnosis di
-			{
-				print di
-			}
-		}
-	}
+	list s = sequence like [ct_sim_booked -> patient_arrives -> end]
+
+	foreach member t in s
+		print t
 }

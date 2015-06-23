@@ -7,17 +7,31 @@ import java.util.Stack;
 import otc.analysis.DepthFirstAdapter;
 import otc.drivers.MyError;
 import otc.drivers.ProgramFile;
+import otc.node.ADisjunctionSequenceItem;
 import otc.node.AForeachComputation;
+import otc.node.AForeachMemberComputation;
+import otc.node.AForeachMemberSetComputation;
+import otc.node.AForeachSequenceComputation;
+import otc.node.AForeachSequenceSetComputation;
 import otc.node.AForeachSetComputation;
 import otc.node.AForeachTableComputation;
 import otc.node.AForeachTableSetComputation;
+import otc.node.AListComputation;
+import otc.node.ANoparamEventItem;
+import otc.node.ANotSequenceItem;
+import otc.node.AParamEventItem;
+import otc.node.APermutationSequenceItem;
 import otc.node.APrintAttrComputation;
 import otc.node.APrintComputation;
 import otc.node.APrintLengthComputation;
 import otc.node.APrintTableitemComputation;
 import otc.node.APrintTimelineComputation;
+import otc.node.ASequence;
+import otc.node.ASequenceItem;
 import otc.node.ATableComputation;
 import otc.node.Node;
+import otc.node.PEventItem;
+import otc.node.PSequenceItem;
 import otc.node.PType;
 import otc.symboltable.DoctorSymbol;
 import otc.symboltable.EventsSymbol;
@@ -532,6 +546,89 @@ public class CodeGenerator extends DepthFirstAdapter
 		level--; 
 	}
 	
+	@Override 
+	public void caseAForeachSequenceComputation(AForeachSequenceComputation node)
+	{
+		// We want to keep track of the number of foreaches. 
+		numberOfForeaches++; 
+		
+		// We need to get the relevant data from the node. 
+		String iteratorName = node.getTIdentifier().getText();
+		String sequence = generateSequenceString((ASequence) node.getSequence());
+		String valueName = iteratorName + "val"; 
+		
+		// Generate the appropriate code. 
+		generatedCode.append("for " + iteratorName + ", " + valueName + " in findSequences(" + sequence +").iteritems():");
+		level++;
+		genCodeNewLineWithTabs(); 
+		
+		// Generate the interior computations. 
+		node.getComputation().apply(this);
+		level--; 
+	}
+	
+	@Override 
+	public void caseAForeachSequenceSetComputation(AForeachSequenceSetComputation node)
+	{
+		// We want to keep track of the number of foreaches. 
+		numberOfForeaches++; 
+		
+		// We need to get the relevant data from the node. 
+		String iteratorName = node.getTIdentifier().getText();
+		String sequence = generateSequenceString((ASequence) node.getSequence());
+		String valueName = iteratorName + "val"; 
+		
+		// Generate the appropriate code. 
+		generatedCode.append("for " + iteratorName + ", " + valueName + " in findSequences(" + sequence +").iteritems():");
+		level++;
+		genCodeNewLineWithTabs(); 
+		
+		// Generate the interior computations. 
+		node.getComputationList().apply(this);
+		level--; 
+	}
+	
+	@Override 
+	public void caseAForeachMemberComputation(AForeachMemberComputation node)
+	{
+		// We want to keep track of the number of foreaches. 
+		numberOfForeaches++; 
+		
+		// We need to get the relevant data from the node. 
+		String iteratorName = node.getName().getText().trim();
+		String sequenceName = node.getSequencename().getText().trim();
+		String valueName = iteratorName + "val"; 
+		
+		// Generate the appropriate code. 
+		generatedCode.append("for " + iteratorName + ", "  + valueName + " in " + sequenceName + ".iteritems():");
+		level++;
+		genCodeNewLineWithTabs(); 
+		
+		// Generate the interior computations. 
+		node.getComputation().apply(this);
+		level--; 
+	}
+	
+	@Override 
+	public void caseAForeachMemberSetComputation(AForeachMemberSetComputation node)
+	{
+		// We want to keep track of the number of foreaches. 
+		numberOfForeaches++; 
+		
+		// We need to get the relevant data from the node. 
+		String iteratorName = node.getName().getText().trim();
+		String sequenceName = node.getSequencename().getText().trim();
+		String valueName = iteratorName + "val"; 
+		
+		// Generate the appropriate code. 
+		generatedCode.append("for " + iteratorName + ", "  + valueName + " in " + sequenceName + ".iteritems():");
+		level++;
+		genCodeNewLineWithTabs(); 
+		
+		// Generate the interior computations. 
+		node.getComputationList().apply(this);
+		level--; 
+	}
 	
 	/***********************************
 	 * 			TABLES				   *
@@ -584,6 +681,12 @@ public class CodeGenerator extends DepthFirstAdapter
 				generatedCode.append("printActor(results,  "+printSymbol.getName()+", " + quotes("DOCTOR") + ", tabCount=" + level + ")");
 				genCodeNewLineWithTabs();
 				break; 
+			}
+			case SequenceItem:
+			{
+				generatedCode.append("printSequenceItem(" + printSymbol.getName()+"val" +")"); 
+				genCodeNewLineWithTabs(); 
+				break;
 			}
 			default:
 			{
@@ -654,6 +757,85 @@ public class CodeGenerator extends DepthFirstAdapter
 	{
 		generatedCode.append("printTableItem(" + node.getVariable().toString().trim() + "," + node.getIterator().toString().trim() + ")"); 
 		genCodeNewLineWithTabs(); 
+	}
+	
+	/***********************************
+	 * 			SEQUENCES			   *
+	 ***********************************/
+	
+	private String getEventName(PEventItem ei)
+	{
+		if(ei instanceof AParamEventItem)
+		{
+			return quotes(((AParamEventItem) ei).getTIdentifier().getText().trim());
+		}
+		else
+		{
+			return quotes(((ANoparamEventItem) ei).getTIdentifier().getText().trim());
+		}
+	}
+	
+	private String generateSequenceString(ASequence s)
+	{
+		String sequenceString = "["; 
+		
+		
+		for(PSequenceItem item : s.getSequenceItem())
+		{
+			if(item instanceof ADisjunctionSequenceItem)
+			{
+				ADisjunctionSequenceItem disItem = (ADisjunctionSequenceItem) item;
+				
+				String eventItemString = "(" + quotes("Or") + ", ["; 
+				
+				for(PEventItem eventItem : disItem.getEventItem())
+				{
+					eventItemString += getEventName(eventItem) + ", "; 
+				}
+				
+				eventItemString += "])"; 
+				sequenceString += eventItemString + ", "; 
+			}
+			
+			if(item instanceof ANotSequenceItem)
+			{
+				ANotSequenceItem notItem = (ANotSequenceItem) item;
+				
+				String eventItemString = "(" + quotes("Not") + ", ["; 
+				
+				eventItemString += getEventName(notItem.getEventItem());
+
+				eventItemString += "])"; 
+				sequenceString += eventItemString + ", "; 
+			}
+			
+			if(item instanceof APermutationSequenceItem)
+			{
+				APermutationSequenceItem anyItem = (APermutationSequenceItem) item;  
+				
+				String eventItemString = "(" + quotes("Any") + ", ["; 
+				
+				for(PEventItem eventItem : anyItem.getEventItem())
+				{
+					eventItemString += getEventName(eventItem) + ", "; 
+				}
+				
+				eventItemString += "])"; 
+				sequenceString += eventItemString + ", "; 
+			}
+		}
+		
+		return sequenceString += " (" + quotes("End") + ", [] )]";
+	}
+	
+	@Override
+	public void caseAListComputation(AListComputation node)
+	{
+		String name = node.getTIdentifier().getText().toString().trim();
+		String sequence = generateSequenceString((ASequence)node.getSequence()); 
+		
+		generatedCode.append(name + " = " + "findSequences(" + sequence + ")");
+		genCodeNewLineWithTabs();
 	}
 	
 	

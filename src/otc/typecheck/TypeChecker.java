@@ -443,41 +443,159 @@ public class TypeChecker extends DepthFirstAdapter
 	 @Override
 	 public void caseAForeachSequenceComputation(AForeachSequenceComputation node)
 	 {
+		 // First we want to increment the appropriate levels.
 		 Stage.incrementForeach();
+		 Stage.incrementCurrentLevel();
 		 
 		 // We want to validate the sequence items. 
 		 node.getSequence().apply(this);
-		  
+		 
+		// Confirm we are not foreaching incorrectly
+		String iterator = node.getTIdentifier().getText();
+			
+		// The iterator must be a unique name. 
+		if(!validDecleration(iterator))
+		{
+			MyError.error(OncoUtilities.getFileName(), 
+					ErrorMessages.invalidRedecleration(iterator)
+					, node.getTIdentifier().getLine());
+		}
+		
+		// Insert the iterator in our symbol table. 
+		Symbol iteratorSymbol = new Symbol(); 
+		iteratorSymbol.setObjectType(ObjectType.SequenceItem);
+		iteratorSymbol.setName(iterator);
+	
+		Stage.computationsPut(iteratorSymbol.getName(), iteratorSymbol);
+		Stage.symbolPutForeachSymbol(iteratorSymbol.getName(), iteratorSymbol);
 	
 		 // Validate the validate the computations
+		node.getComputation().apply(this);
+		
+		Stage.decrementCurrentLevel(); 
 	 }
 
 	@Override
 	 public void caseAForeachSequenceSetComputation(AForeachSequenceSetComputation node)
 	 {
-		Stage.incrementForeach();
-		
-		// We want to validate the sequence items. 
-		node.getSequence().apply(this);
+		// First we want to increment the appropriate levels.
+		 Stage.incrementForeach();
+		 Stage.incrementCurrentLevel();
 		 
+		 // We want to validate the sequence items. 
+		 node.getSequence().apply(this);
+		 
+		// Confirm we are not foreaching incorrectly
+		String iterator = node.getTIdentifier().getText();
+			
+		// The iterator must be a unique name. 
+		if(!validDecleration(iterator))
+		{
+			MyError.error(OncoUtilities.getFileName(), 
+					ErrorMessages.invalidRedecleration(iterator)
+					, node.getTIdentifier().getLine());
+		}
+		
+		// Insert the iterator in our symbol table. 
+		Symbol iteratorSymbol = new Symbol(); 
+		iteratorSymbol.setObjectType(ObjectType.SequenceItem);
+		iteratorSymbol.setName(iterator);
+	
+		Stage.computationsPut(iteratorSymbol.getName(), iteratorSymbol);
+		Stage.symbolPutForeachSymbol(iteratorSymbol.getName(), iteratorSymbol);
+	
 		 // Validate the validate the computations
+		node.getComputationList().apply(this);
+		
+		Stage.decrementCurrentLevel(); 
 	 }
 	 
 	 @Override
 	 public void caseAForeachMemberComputation(AForeachMemberComputation node)
 	 {
+		 // We want to increment the appropriate levels. 
 		 Stage.incrementForeach();
+		 Stage.incrementCurrentLevel();
 		 
-		// We want to validate the sequence items. 
+		 // We want to grab the relevant information. 
+		 String iterator = node.getName().getText().toString(); 
+		 String variable = node.getSequencename().getText().toString(); 
 		 
+		// The iterator must be a unique name. 
+		if(!validDecleration(iterator))
+		{
+			MyError.error(OncoUtilities.getFileName(), 
+					ErrorMessages.invalidRedecleration(iterator)
+					, node.getName().getLine());
+		}
+		
+		// Validate the list
+		Symbol table = Stage.computationsGet(variable); 
+		
+		if(!(table.getObjectType() == ObjectType.List))
+		{
+			MyError.error(OncoUtilities.getFileName(), 
+					ErrorMessages.invalidObjectType(variable, table.getObjectType(), ObjectType.List ), 
+					node.getName().getLine());
+		}
+		
+		// Insert the iterator and variable into the symbol table. 
+		Symbol iteratorSymbol = new Symbol();
+		iteratorSymbol.setObjectType(ObjectType.SequenceItem);
+		iteratorSymbol.setName(iterator);
+		
+		Stage.computationsPut(iteratorSymbol.getName(), iteratorSymbol);
+		Stage.symbolPutForeachSymbol(iteratorSymbol.getName(), iteratorSymbol);
+		 	 
+		// Validate the computations.
+		node.getComputation().apply(this);
+		
+		// Decrement the current level. 
+		Stage.decrementCurrentLevel();
 	 }
 	 
 	 @Override
 	 public void caseAForeachMemberSetComputation(AForeachMemberSetComputation node)
 	 {
+		 // We want to increment the appropriate levels. 
 		 Stage.incrementForeach();
+		 Stage.incrementCurrentLevel();
 		 
-		 // Validate??
+		 // We want to grab the relevant information. 
+		 String iterator = node.getName().getText().toString(); 
+		 String variable = node.getSequencename().getText().toString(); 
+		 
+		// The iterator must be a unique name. 
+		if(!validDecleration(iterator))
+		{
+			MyError.error(OncoUtilities.getFileName(), 
+					ErrorMessages.invalidRedecleration(iterator)
+					, node.getName().getLine());
+		}
+		
+		// Validate the list
+		Symbol table = Stage.computationsGet(variable); 
+		
+		if(!(table.getObjectType() == ObjectType.List))
+		{
+			MyError.error(OncoUtilities.getFileName(), 
+					ErrorMessages.invalidObjectType(variable, table.getObjectType(), ObjectType.List ), 
+					node.getName().getLine());
+		}
+		
+		// Insert the iterator and variable into the symbol table. 
+		Symbol iteratorSymbol = new Symbol();
+		iteratorSymbol.setObjectType(ObjectType.SequenceItem);
+		iteratorSymbol.setName(iterator);
+		
+		Stage.computationsPut(iteratorSymbol.getName(), iteratorSymbol);
+		Stage.symbolPutForeachSymbol(iteratorSymbol.getName(), iteratorSymbol);
+		 	 
+		// Validate the computations.
+		node.getComputationList().apply(this);
+		
+		// Decrement the current level. 
+		Stage.decrementCurrentLevel();
 	 }
 	 
 	 @Override
@@ -712,6 +830,25 @@ public class TypeChecker extends DepthFirstAdapter
 	 public void caseAListComputation(AListComputation node)
 	 {
 		 // We want to make sure the name has not already been declared.
+		 String name = node.getTIdentifier().getText(); 
+		 int linenumber = node.getTIdentifier().getLine(); 
+		 
+		// First we want to make sure the name is not already used. 
+		 if(Stage.computationsContain(name))
+		 {
+			 MyError.error(OncoUtilities.getFileName(), 
+					 ErrorMessages.invalidRedecleration(name), 
+					 linenumber);
+			 return; 
+		 }
+		 
+		Symbol list = new Symbol(); 
+		list.setObjectType(ObjectType.List);
+		list.setLineNumber(linenumber);
+		list.setName(name);
+		
+		Stage.computationsPut(name, list);
+		Stage.symbolsPut(name, list);
 		 
 		 // We want to validate the sequence items. 
 		 node.getSequence().apply(this);
