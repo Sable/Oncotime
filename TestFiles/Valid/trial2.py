@@ -1,4 +1,5 @@
 import MySQLdb
+import json
 from prettytable import PrettyTable
 db=MySQLdb.connect(host='127.0.0.1', port=2000, user='520student', passwd='comp520', db='oncodb')
 
@@ -269,6 +270,7 @@ class Results(object):
 				incorporateData(self, item, event)
 
 
+
 ############################################################
 # FUNCTIONAL METHODS 		 							   #
 ############################################################
@@ -380,6 +382,8 @@ def printActor(results, name, actor_type, tabCount = 0):
 		printHeader(str(getResult(actor_type, name)))
 	else:
 		print (("\t") * tabCount) + str(getResult(actor_type, name))
+
+	print json.dumps(getResult(actor_type, name))
 	
 
 def printActorAttributes(results, name, actor_type, attr_list = None, tabCount=0):
