@@ -109,6 +109,7 @@ Tokens
    * Values            *
    *********************/
     t_star = 				'*'; 
+    t_range       =         (digit* | digit digit digit digit '-' digit digit '-' digit digit | digit digit ':' digit digit)  ' to ' (digit* | digit digit digit digit '-' digit digit '-' digit digit | digit digit ':' digit digit);
 	t_postalcode = 			alpha_upper digit alpha_upper digit alpha_upper digit | alpha_upper digit alpha_upper | alpha_upper;
 	t_date = 				digit digit digit digit '-' digit digit '-' digit digit; 
 	t_hour = 				digit digit ':' digit digit;   
@@ -327,7 +328,9 @@ Productions
 	 | {expandable_list_item} 	l_angle t_identifier r_angle [typed_list]:typed_list_tail?
 	 	{-> New typed_list.expandable_list_item(t_identifier, typed_list.typed_list)}
 	 | {all_list_item}			t_star [typed_list]:typed_list_tail?
-	 	{-> New typed_list.all_list_item(t_star, typed_list.typed_list)};  
+	 	{-> New typed_list.all_list_item(t_star, typed_list.typed_list)}
+	 | {range_list_item}		t_range [typed_list]:typed_list_tail?
+	 	{-> New typed_list.range_list_item(t_range, typed_list.typed_list)};  
 			
 	typed_list_tail{-> typed_list} = 
 		comma typed_list
@@ -450,7 +453,8 @@ Productions
 	 | {string_list_item} 		t_identifier typed_list? // TODO: Smarter way to do this.
 	 | {hour_list_item} 		t_hour typed_list?
 	 | {expandable_list_item} 	t_identifier typed_list?
-	 | {all_list_item}			t_star typed_list?;  
+	 | {all_list_item}			t_star typed_list?
+	 | {range_list_item}		t_range typed_list?; 
 	
 	typed_name = 
 		type t_identifier; 

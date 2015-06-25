@@ -1,11 +1,16 @@
 package otc.codegeneration;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Stack;
 
 import otc.analysis.DepthFirstAdapter;
+import otc.drivers.ErrorMessages;
 import otc.drivers.MyError;
+import otc.drivers.OncoUtilities;
 import otc.drivers.ProgramFile;
 import otc.node.ADisjunctionSequenceItem;
 import otc.node.AForeachComputation;
@@ -192,12 +197,19 @@ public class CodeGenerator extends DepthFirstAdapter
 				{
 					case ID:
 					{
-						populationItemQuery += tableNamePatient + "PatientSerNum = " + val.getValue();  
+						if(val.getType() == Type.Range)
+							populationItemQuery += tableNamePatient + "PatientSerNum >= " + val.getValue() +" and " + tableNamePatient + "PatientSerNum <= " + val.getValue2();
+						else
+							populationItemQuery += tableNamePatient + "PatientSerNum = " + val.getValue();  	
+						
 						break;
 					}
 					case Birthyear:
 					{
-						populationItemQuery += tableNamePatient + "DateOfBirth = " + val.getValue();
+						if(val.getType() == Type.Range)
+							populationItemQuery += tableNamePatient + "DateOfBirth >= " + val.getValue() +" and " + tableNamePatient + "DateOfBirth <= " + val.getValue2();
+						else
+							populationItemQuery += tableNamePatient + "DateOfBirth = " + val.getValue(); 
 						break; 
 					}
 					case Diagnosis:
@@ -257,53 +269,99 @@ public class CodeGenerator extends DepthFirstAdapter
 				TypedListValue val = item.getValues().get(i); 
 				
 				switch(item.getType())
-				{
-					// TODO: We need to add 'to' I completely forgot about it.. 
+				{ 
 					case Hours:
 					{
-						// The start time is easy to get. 
-						String startTime = "\\\"" + val.getValue() + ":00" + "\\\""; 
-						
-						// We need to get the end time. 
-						// hours are always HH:MM, so we can get just the hour. 
-						String hour = val.getValue().substring(0, 3); 
-						String endTime = "\\\"" + hour + "59:59" + "\\\""; 
-						
-						periodItemQuery += "(" + tableNamePeriod + "LastUpdated >= " + startTime 
-								+ " and "
-								+ tableNamePeriod + "LastUpdated <= " + endTime + ")"; 
-						
-						
+						if(val.getType() == Type.Range)
+						{
+							// Start hour. 
+							String hour1 = val.getValue().substring(0, 2);
+							String hour2 = val.getValue2().substring(0, 2);
+							
+							periodItemQuery += "(" + "HOUR("+tableNamePeriod+"LastUpdated) >=" +hour1 +
+													" and "
+												   + "HOUR("+tableNamePeriod+"LastUpdated) <=" +hour2 + ")"; 
+						}
+						else
+						{
+							// The start time is easy to get. 
+							String startTime = "\\\"" + val.getValue() + ":00" + "\\\""; 
+							
+							// We need to get the end time. 
+							// hours are always HH:MM, so we can get just the hour. 
+							String hour = val.getValue().substring(0, 3); 
+							String endTime = "\\\"" + hour + "59:59" + "\\\""; 
+							
+							periodItemQuery += "(" + "TIME("+tableNamePeriod+"LastUpdated) >=" +startTime +
+									" and "
+								   + "TIME("+tableNamePeriod+"LastUpdated) <=" +endTime + ")";
+						}
+						 
 						break;
 					}
 					
 					case Date:
 					{
-						String startDateTime = "\\\"" + val.getValue() + " 00:00:00" + "\\\""; 
-						String endDateTime   = "\\\"" + val.getValue() + " 23:59:59" + "\\\""; 
+						if(val.getType() == Type.Range)
+						{
+							String startDateTime = "\\\"" + val.getValue() + " 00:00:00" + "\\\""; 
+							String endDateTime   = "\\\"" + val.getValue2() + " 23:59:59" + "\\\"";
+							
+							periodItemQuery += "(" + tableNamePeriod + "LastUpdated >= " + startDateTime 
+									+ " and " 
+									+ tableNamePeriod + "LastUpdated <= " +endDateTime + ")";
+						}
+						else
+						{
+							String startDateTime = "\\\"" + val.getValue() + " 00:00:00" + "\\\""; 
+							String endDateTime   = "\\\"" + val.getValue2() + " 23:59:59" + "\\\"";
+							
+							periodItemQuery += "(" + tableNamePeriod + "LastUpdated >= " + startDateTime 
+									+ " and " 
+									+ tableNamePeriod + "LastUpdated <= " +endDateTime + ")";	
+						}
 						
-						periodItemQuery += "(" + tableNamePeriod + "LastUpdated >= " + startDateTime 
-								+ " and " 
-								+ tableNamePeriod + "LastUpdated <= " +endDateTime + ")"; 
+						 
 					
 						break; 
 					}
 					
 					case Months:
 					{
-						periodItemQuery += tableNamePeriod + "LastUpdated REGEXP " + "\\\"-" + val.getValue() +"-\\\""; 
+						if(val.getType() == Type.Range)
+						{
+							periodItemQuery += "MONTH(" + tableNamePeriod + "LastUpdated) >= " + val.getValue()
+													+ " and "
+													+ "MONTH(" + tableNamePeriod + "LastUpdated) <= " + val.getValue2() + " "; 
+						}
+						else
+							periodItemQuery += "MONTH(" + tableNamePeriod + "LastUpdated) = " + val.getValue();  
 						break;
 					}
 					
 					case Days:
 					{
-						periodItemQuery += "DAYOFWEEK(" + tableNamePeriod + "LastUpdated) = " + val.getValue();   
+						if(val.getType() == Type.Range)
+						{
+							periodItemQuery += "DAYOFWEEK(" + tableNamePeriod + "LastUpdated) >= " + val.getValue()
+													+ " and "
+													+ "DAYOFWEEK(" + tableNamePeriod + "LastUpdated) <= " + val.getValue2() + " "; 
+						}
+						else
+							periodItemQuery += "DAYOFWEEK(" + tableNamePeriod + "LastUpdated) = " + val.getValue();   
 						break; 
 					}
 					
 					case Years:
 					{
-						periodItemQuery += "YEAR(" + tableNamePeriod + "LastUpdated) = " + val.getValue(); 
+						if(val.getType() == Type.Range)
+						{
+							periodItemQuery += "YEAR(" + tableNamePeriod + "LastUpdated) >= " + val.getValue()
+													+ " and "
+													+ "YEAR(" + tableNamePeriod + "LastUpdated) <= " + val.getValue2() + " "; 
+						}
+						else
+							periodItemQuery += "YEAR(" + tableNamePeriod + "LastUpdated) = " + val.getValue(); 
 						break; 
 					}
 					
@@ -350,7 +408,12 @@ public class CodeGenerator extends DepthFirstAdapter
 				{
 					case ID:
 					{
-						doctorItemQuery += tableNameDoctor + "DoctorSerNum = " + val.getValue(); 
+						
+						if(val.getType() == Type.Range)
+							doctorItemQuery += tableNameDoctor + "DoctorSerNum >= " + val.getValue() +" and " + tableNameDoctor + "DoctorSerNum <= " + val.getValue2();
+						else
+							doctorItemQuery += tableNameDoctor + "DoctorSerNum = " + val.getValue();   			
+						
 						break; 
 					}
 					default:

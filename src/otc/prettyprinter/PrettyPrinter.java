@@ -4,7 +4,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import otc.analysis.DepthFirstAdapter;
-import otc.drivers.OncoCleaner;
+import otc.drivers.SymbolTableInitializer;
 import otc.drivers.ProgramFile;
 import otc.node.*;
 import otc.symboltable.DoctorSymbol;

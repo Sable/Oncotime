@@ -89,8 +89,8 @@ public class Main
 		MyError.noErrors(); 
 		
 		/* Symbol Table creation, Expansion of <>, Filter cleanup*/
-		if(MyError.debug) MyError.debug("Creating the Symbol Table and cleaning up the program..."); 
-		OncoCleaner.clean(theProgram); 
+		if(MyError.debug) MyError.debug("Creating the Symbol Table and expanding and filters..."); 
+		SymbolTableInitializer.initialize(theProgram); 
 		if(MyError.debug) MyError.debugln(" done");
 		MyError.noErrors(); 
 		

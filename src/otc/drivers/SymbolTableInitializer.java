@@ -42,13 +42,13 @@ import otc.symboltable.Stage;
  * The symbol table assigns new names to all the variables, dependenent on scope etc. 
  * @author vikramsundaram
  */
-public class OncoCleaner extends DepthFirstAdapter 
+public class SymbolTableInitializer extends DepthFirstAdapter 
 {	
 	/**
 	 * The visitor method that starts the traversal for the program.  
 	 * @param theProgram
 	 */
-	public static void clean(LinkedList<ProgramFile> theProgram) 
+	public static void initialize(LinkedList<ProgramFile> theProgram) 
 	{ 	
 		Iterator<ProgramFile> iter = theProgram.iterator();
 		ProgramFile programFile;
@@ -62,7 +62,7 @@ public class OncoCleaner extends DepthFirstAdapter
 			// Set the current FileName 
 			OncoUtilities.setFileName(OncoUtilities.getNameOfFileWithoutExtension(programFile.getName()));
 			
-			ast.apply(new OncoCleaner());
+			ast.apply(new SymbolTableInitializer());
 		}
 	}
 	

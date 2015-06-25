@@ -127,6 +127,10 @@ public class TypeChecker extends DepthFirstAdapter
 	 */
 	private boolean typeInferrable(TypedListValue val, Type t) 
 	{ 	
+		
+		if(val.getType() == Type.Range)
+			return true; 
+		
 		// ID's might have 4 digit numbers or 2 digit numbers 
 		if(t == Type.ID)
 		{

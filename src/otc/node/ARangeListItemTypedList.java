@@ -5,22 +5,22 @@ package otc.node;
 import otc.analysis.*;
 
 @SuppressWarnings("nls")
-public final class AMonthsListItemTypedList extends PTypedList
+public final class ARangeListItemTypedList extends PTypedList
 {
-    private TTMonth _tMonth_;
+    private TTRange _tRange_;
     private PTypedList _typedList_;
 
-    public AMonthsListItemTypedList()
+    public ARangeListItemTypedList()
     {
         // Constructor
     }
 
-    public AMonthsListItemTypedList(
-        @SuppressWarnings("hiding") TTMonth _tMonth_,
+    public ARangeListItemTypedList(
+        @SuppressWarnings("hiding") TTRange _tRange_,
         @SuppressWarnings("hiding") PTypedList _typedList_)
     {
         // Constructor
-        setTMonth(_tMonth_);
+        setTRange(_tRange_);
 
         setTypedList(_typedList_);
 
@@ -29,26 +29,26 @@ public final class AMonthsListItemTypedList extends PTypedList
     @Override
     public Object clone()
     {
-        return new AMonthsListItemTypedList(
-            cloneNode(this._tMonth_),
+        return new ARangeListItemTypedList(
+            cloneNode(this._tRange_),
             cloneNode(this._typedList_));
     }
 
     public void apply(Switch sw)
     {
-        ((Analysis) sw).caseAMonthsListItemTypedList(this);
+        ((Analysis) sw).caseARangeListItemTypedList(this);
     }
 
-    public TTMonth getTMonth()
+    public TTRange getTRange()
     {
-        return this._tMonth_;
+        return this._tRange_;
     }
 
-    public void setTMonth(TTMonth node)
+    public void setTRange(TTRange node)
     {
-        if(this._tMonth_ != null)
+        if(this._tRange_ != null)
         {
-            this._tMonth_.parent(null);
+            this._tRange_.parent(null);
         }
 
         if(node != null)
@@ -61,7 +61,7 @@ public final class AMonthsListItemTypedList extends PTypedList
             node.parent(this);
         }
 
-        this._tMonth_ = node;
+        this._tRange_ = node;
     }
 
     public PTypedList getTypedList()
@@ -93,7 +93,7 @@ public final class AMonthsListItemTypedList extends PTypedList
     public String toString()
     {
         return ""
-            + toString(this._tMonth_)
+            + toString(this._tRange_)
             + toString(this._typedList_);
     }
 
@@ -101,9 +101,9 @@ public final class AMonthsListItemTypedList extends PTypedList
     void removeChild(@SuppressWarnings("unused") Node child)
     {
         // Remove child
-        if(this._tMonth_ == child)
+        if(this._tRange_ == child)
         {
-            this._tMonth_ = null;
+            this._tRange_ = null;
             return;
         }
 
@@ -120,9 +120,9 @@ public final class AMonthsListItemTypedList extends PTypedList
     void replaceChild(@SuppressWarnings("unused") Node oldChild, @SuppressWarnings("unused") Node newChild)
     {
         // Replace child
-        if(this._tMonth_ == oldChild)
+        if(this._tRange_ == oldChild)
         {
-            setTMonth((TTMonth) newChild);
+            setTRange((TTRange) newChild);
             return;
         }
 

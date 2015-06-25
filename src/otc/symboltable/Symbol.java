@@ -25,6 +25,7 @@ import otc.node.AMonthsType;
 import otc.node.ANumberListItemTypedList;
 import otc.node.APostalcodeListItemTypedList;
 import otc.node.APostalcodeType;
+import otc.node.ARangeListItemTypedList;
 import otc.node.ASexType;
 import otc.node.AStringListItemTypedList;
 import otc.node.ATypedName;
@@ -45,7 +46,7 @@ public class Symbol
 	public static enum Type {ID, Sex, Male, Female, 
 		Birthyear, Diagnosis, Postalcode, Years, 
 		Months, Days, Date, Event, Hours, All,
-		PopulationFilter, PeriodFilter, EventsFilter, DoctorFilter};
+		PopulationFilter, PeriodFilter, EventsFilter, DoctorFilter, Range};
 	
 	// These are the various object types that our symbol can be. 
 	public static enum ObjectType {Group, Actor, 
@@ -217,6 +218,23 @@ public class Symbol
 				// Continue
 				typedList = ((ANumberListItemTypedList) typedList).getTypedList(); 
 			}
+			else if(typedList instanceof ARangeListItemTypedList)
+			{
+				// Construct the TypedListValue
+				typedList = ((ARangeListItemTypedList)typedList);  
+				
+				String[] split = (((ARangeListItemTypedList) typedList).toString().split(" to "));
+				String firstSubString = split[0];
+				String secondSubString = split[1];
+				
+				TypedListValue v = new TypedListValue(Type.Range, firstSubString, secondSubString); 
+				v.setLineNumber(((ARangeListItemTypedList) typedList).getTRange().getLine()); 
+				
+				// Store it in our list. 
+				groupValues.addLast(v);
+				
+				typedList = ((ARangeListItemTypedList) typedList).getTypedList(); 				
+			}
 			else if(typedList instanceof AMaleListItemTypedList)
 			{
 				// Construct the TypedListValue
@@ -385,7 +403,8 @@ public class Symbol
 			}
 			else
 			{
-				//TODO: Throw errror. 
+				MyError.fatalError("Expanding Filters and Groups",
+						"We are trying to handle a type in Symbol.convertTypes that does not exist: " + typedList.getClass());
 			}
 		}
 		return groupValues;

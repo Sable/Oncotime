@@ -5,14 +5,14 @@ package otc.node;
 import otc.analysis.*;
 
 @SuppressWarnings("nls")
-public final class TTPostalcode extends Token
+public final class TTRange extends Token
 {
-    public TTPostalcode(String text)
+    public TTRange(String text)
     {
         setText(text);
     }
 
-    public TTPostalcode(String text, int line, int pos)
+    public TTRange(String text, int line, int pos)
     {
         setText(text);
         setLine(line);
@@ -22,11 +22,11 @@ public final class TTPostalcode extends Token
     @Override
     public Object clone()
     {
-      return new TTPostalcode(getText(), getLine(), getPos());
+      return new TTRange(getText(), getLine(), getPos());
     }
 
     public void apply(Switch sw)
     {
-        ((Analysis) sw).caseTTPostalcode(this);
+        ((Analysis) sw).caseTTRange(this);
     }
 }
