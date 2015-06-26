@@ -223,9 +223,17 @@ public class Symbol
 				// Construct the TypedListValue
 				typedList = ((ARangeListItemTypedList)typedList);  
 				
-				String[] split = (((ARangeListItemTypedList) typedList).toString().split(" to "));
+				String[] split = (((ARangeListItemTypedList) typedList).toString().split(" "));
 				String firstSubString = split[0];
-				String secondSubString = split[1];
+				String secondSubString = "";
+				try
+				{
+					secondSubString = split[2];
+				}
+				catch(Exception e)
+				{
+					secondSubString = split[1];
+				}
 				
 				TypedListValue v = new TypedListValue(Type.Range, firstSubString, secondSubString); 
 				v.setLineNumber(((ARangeListItemTypedList) typedList).getTRange().getLine()); 

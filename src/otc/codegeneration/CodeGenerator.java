@@ -196,7 +196,7 @@ public class CodeGenerator extends DepthFirstAdapter
 				switch(item.getType())
 				{
 					case ID:
-					{
+					{ 
 						if(val.getType() == Type.Range)
 							populationItemQuery += tableNamePatient + "PatientSerNum >= " + val.getValue() +" and " + tableNamePatient + "PatientSerNum <= " + val.getValue2();
 						else

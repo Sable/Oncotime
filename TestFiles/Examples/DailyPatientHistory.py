@@ -1,11 +1,10 @@
 import MySQLdb
-import json
 from prettytable import PrettyTable
 db=MySQLdb.connect(host='127.0.0.1', port=2000, user='520student', passwd='comp520', db='oncodb')
 
 ontology={"consult_referral_received": {"info":["Task.LastUpdated as TimeStamp","Patient.PatientSerNum","Patient.Sex","Patient.DateOfBirth","Patient.PostalCode","PatientDoctor.DoctorSerNum","PatientDoctor.OncologistFlag","Diagnosis.Description","Task.CreationDate","Task.DueDateTime","Priority.PriorityCode","Task.CompletionDate"],"tables":[	"Patient","Priority","Task","Alias","Diagnosis","PatientDoctor"],"constraints": {"Alias.AliasName":"\"CRR with Origin\"","Alias.AliasSerNum":"Task.AliasSerNum","Task.PatientSerNum":"Patient.PatientSerNum","Task.PrioritySerNum":"Priority.PrioritySerNum","Task.Status":"\"Open\"","Diagnosis.PatientSerNum":"Patient.PatientSerNum","PatientDoctor.PatientSerNum":"Patient.PatientSerNum"},"period":"Task"},"initial_consult_booked": {"info":["Task.LastUpdated as TimeStamp","Patient.PatientSerNum","Patient.Sex","Patient.DateOfBirth","Patient.PostalCode","PatientDoctor.DoctorSerNum","PatientDoctor.OncologistFlag","Diagnosis.Description","Task.CreationDate as TimeStamp","Task.DueDateTime","Priority.PriorityCode","Task.CompletionDate"],"tables":["Patient","Priority","Task","Alias","Diagnosis","PatientDoctor"],"constraints": {"Alias.AliasName":"\"CRR with Origin\"","Alias.AliasSerNum":"Task.AliasSerNum","Task.PatientSerNum":"Patient.PatientSerNum","Task.PrioritySerNum":"Priority.PrioritySerNum","Task.Status":"\"In Progress\"","Diagnosis.PatientSerNum":"Patient.PatientSerNum","PatientDoctor.PatientSerNum":"Patient.PatientSerNum"},"period":"Task"},"initial_consult_completed": {"info":["Task.LastUpdated as TimeStamp","Patient.PatientSerNum","Patient.Sex","Patient.DateOfBirth","Patient.PostalCode","PatientDoctor.DoctorSerNum","PatientDoctor.OncologistFlag","Diagnosis.Description","Task.CreationDate as TimeStamp","Task.DueDateTime","Priority.PriorityCode","Task.CompletionDate"],"tables":["Patient","Priority","Task","Alias","Diagnosis","PatientDoctor"],"constraints": {"Alias.AliasName":"\"CRR with Origin\"","Alias.AliasSerNum":"Task.AliasSerNum","Task.PatientSerNum":"Patient.PatientSerNum","Task.PrioritySerNum":"Priority.PrioritySerNum","Task.Status":"\"Completed\"","Diagnosis.PatientSerNum":"Patient.PatientSerNum","PatientDoctor.PatientSerNum":"Patient.PatientSerNum"},"period":"Task"},"ct_sim_booked": {"info":["Patient.PatientSerNum","PatientDoctor.DoctorSerNum","PatientDoctor.OncologistFlag","Patient.Sex","Patient.DateOfBirth","Patient.PostalCode","Diagnosis.Description","Appointment.LastUpdated as TimeStamp"],"tables":["Patient","Appointment","Alias","Diagnosis","PatientDoctor"],"constraints": {"Alias.AliasName":"\"Ct-Sim\"","Alias.AliasSerNum":"Appointment.AliasSerNum","Appointment.PatientSerNum":"Patient.PatientSerNum","Diagnosis.PatientSerNum":"Patient.PatientSerNum","PatientDoctor.PatientSerNum":"Patient.PatientSerNum"},"period":"Appointment"},"ct_sim_completed": {"info":["Patient.PatientSerNum","PatientDoctor.DoctorSerNum","PatientDoctor.OncologistFlag","Patient.Sex","Patient.DateOfBirth","Patient.PostalCode","Diagnosis.Description","Appointment.LastUpdated as TimeStamp","Appointment.ScheduledStartTime","Appointment.ScheduledEndTime"],"tables":["Patient","Appointment","Alias","Diagnosis","PatientDoctor"],"constraints": {"Alias.AliasName":"\"Ct-Sim\"","Alias.AliasSerNum":"Appointment.AliasSerNum","Appointment.PatientSerNum":"Patient.PatientSerNum","Diagnosis.PatientSerNum":"Patient.PatientSerNum","PatientDoctor.PatientSerNum":"Patient.PatientSerNum","Appointment.Status":"\"Manually Completed\""},"period":"Appointment"},"treatment_began": {"info":["Patient.PatientSerNum","PatientDoctor.DoctorSerNum","PatientDoctor.OncologistFlag","Patient.Sex","Patient.DateOfBirth","Patient.PostalCode","Diagnosis.Description","Appointment.LastUpdated as TimeStamp","Appointment.ScheduledStartTime","Appointment.ScheduledEndTime"],"tables":["Patient","Appointment","Alias","Diagnosis","PatientDoctor"],"constraints": {"Alias.AliasName":"\"First Treatment\"","Alias.AliasSerNum":"Appointment.AliasSerNum","Appointment.PatientSerNum":"Patient.PatientSerNum","Diagnosis.PatientSerNum":"Patient.PatientSerNum","PatientDoctor.PatientSerNum":"Patient.PatientSerNum","Appointment.Status":"\"Open\""},"period":"Appointment"},"patient_arrives": {"info":["Patient.PatientSerNum","PatientDoctor.DoctorSerNum","PatientDoctor.OncologistFlag","Patient.Sex","Patient.DateOfBirth","Patient.PostalCode","Diagnosis.Description","PatientLocation.LastUpdated as TimeStamp","PatientLocation.ArrivalDateTime","Appointment.ScheduledStartTime"],"tables":["Patient","Appointment","Diagnosis","PatientDoctor","PatientLocation"],"constraints": {"Appointment.PatientSerNum":"Patient.PatientSerNum","Diagnosis.PatientSerNum":"Patient.PatientSerNum","PatientDoctor.PatientSerNum":"Patient.PatientSerNum","Appointment.AppointmentSerNum":"PatientLocation.AppointmentSerNum"},"period":"PatientLocation"},"patient_scheduled": {"info":["Patient.PatientSerNum","PatientDoctor.DoctorSerNum","PatientDoctor.OncologistFlag","Patient.Sex","Patient.DateOfBirth","Patient.PostalCode","Diagnosis.Description","Appointment.LastUpdated as TimeStamp","Appointment.ScheduledStartTime"],"tables":["Patient","Appointment","Diagnosis","PatientDoctor"],"constraints": {"Appointment.PatientSerNum":"Patient.PatientSerNum","Diagnosis.PatientSerNum":"Patient.PatientSerNum","PatientDoctor.PatientSerNum":"Patient.PatientSerNum",},"period":"Appointment"}}
 events = ["*"]
-filters = "and (Patient.PatientSerNum >= 10 and Patient.PatientSerNum <= 1000 )"
+filters = "and (Patient.DateOfBirth >= 1950 and Patient.DateOfBirth <= 1970) and (Patient.PatientSerNum = 1001 or Patient.PatientSerNum >= 300 and Patient.PatientSerNum <= 400 or Patient.PatientSerNum >= 1 and Patient.PatientSerNum <= 250) and (Patient.Sex REGEXP \"Male\" or Patient.Sex REGEXP \"Female\") "
 
 
 
@@ -54,7 +53,6 @@ class Patient(object):
 			return self.doctors
 
 	def __repr__(self):
-		print "HELLO!"
 		return str(self.id)
 
 	def __str__(self):
@@ -271,7 +269,6 @@ class Results(object):
 				incorporateData(self, item, event)
 
 
-
 ############################################################
 # FUNCTIONAL METHODS 		 							   #
 ############################################################
@@ -373,8 +370,6 @@ def printTable(table):
 
 	print pretty_table
 
-	
-
 def printActor(results, name, actor_type, tabCount = 0):
 	"""
 		Function handles printing actors, their attributes, and nested actors. 
@@ -385,9 +380,6 @@ def printActor(results, name, actor_type, tabCount = 0):
 		printHeader(str(getResult(actor_type, name)))
 	else:
 		print (("\t") * tabCount) + str(getResult(actor_type, name))
-
-	print "hello!"
-	print json.dumps(getResult(actor_type, name))
 	
 
 def printActorAttributes(results, name, actor_type, attr_list = None, tabCount=0):
@@ -627,9 +619,8 @@ def printSequenceItem(sequenceList):
 ############################################################
 # GENERATED COMPUTATIONS	 		 					   #
 ############################################################
-#
-#
-#
+
+
 for p, pval in results.get_type("PATIENT").iteritems():
-	printActor(results, p, "PATIENT", tabCount=1)
+	printPatientTimeline(results, p)
 	

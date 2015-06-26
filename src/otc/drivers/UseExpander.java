@@ -109,9 +109,7 @@ public class UseExpander extends DepthFirstAdapter
 	private void includeGroupsInFile(TTGroupFile file) 
 	{
 		// We first just want the location of the group file. 
-		String absoluteFileLocation = fileLocation + file.getText(); 
-		
-		
+		String absoluteFileLocation = fileLocation + file.getText();  
 		
 		// TODO: We should throw a proper error message if the file does not exist in that location.
 		// We now want to find the file, open it, and parse it.
