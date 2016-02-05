@@ -123,7 +123,7 @@ public class CodeGenerator extends DepthFirstAdapter
 		genCodeNewLine();
 		
 		// This allows us to remotely connect to the db. 
-		generatedCode.append("db=MySQLdb.connect(host='127.0.0.1', port=2000, user='520student', passwd='comp520', db='oncodb')");
+		generatedCode.append("db=MySQLdb.connect(host='127.0.0.1', user='root', passwd='root', db='oncodb')");
 		genCodeNewLine(); 
 		
 		// This is the contents of the Ontology.json file. 

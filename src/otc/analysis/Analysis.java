@@ -150,4 +150,5 @@ public interface Analysis extends Switch
     void caseTEmptySpace(TEmptySpace node);
     void caseTLineComment(TLineComment node);
     void caseEOF(EOF node);
+    void caseInvalidToken(InvalidToken node);
 }

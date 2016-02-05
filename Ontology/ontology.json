@@ -18,7 +18,8 @@
 					"Task",
 					"Alias",
 					"Diagnosis",
-					"PatientDoctor"
+					"PatientDoctor",
+					"Doctor"
 		],
 		"constraints": {
 				"Alias.AliasName":"\"CRR with Origin\"",
@@ -50,7 +51,8 @@
 					"Task",
 					"Alias",
 					"Diagnosis",
-					"PatientDoctor"
+					"PatientDoctor",
+					"Doctor"
 		],
 		"constraints": {
 				"Alias.AliasName":"\"CRR with Origin\"",
@@ -82,7 +84,8 @@
 					"Task",
 					"Alias",
 					"Diagnosis",
-					"PatientDoctor"
+					"PatientDoctor",
+					"Doctor"
 		],
 		"constraints": {
 				"Alias.AliasName":"\"CRR with Origin\"",
@@ -109,7 +112,8 @@
 					"Appointment",
 					"Alias",
 					"Diagnosis",
-					"PatientDoctor"
+					"PatientDoctor",
+					"Doctor"
 		],
 		"constraints": {
 				"Alias.AliasName":"\"Ct-Sim\"",
@@ -136,7 +140,8 @@
 					"Appointment",
 					"Alias",
 					"Diagnosis",
-					"PatientDoctor"
+					"PatientDoctor",
+					"Doctor"
 		],
 		"constraints": {
 				"Alias.AliasName":"\"Ct-Sim\"",
@@ -164,7 +169,8 @@
 					"Appointment",
 					"Alias",
 					"Diagnosis",
-					"PatientDoctor"
+					"PatientDoctor",
+					"Doctor"
 		],
 		"constraints": {
 				"Alias.AliasName":"\"First Treatment\"",
@@ -192,7 +198,8 @@
 					"Appointment",
 					"Diagnosis",
 					"PatientDoctor",
-					"PatientLocation"
+					"PatientLocation",
+					"Doctor"
 		],
 		"constraints": {
 				"Appointment.PatientSerNum":"Patient.PatientSerNum",
@@ -216,7 +223,8 @@
 		"tables":["Patient",
 					"Appointment",
 					"Diagnosis",
-					"PatientDoctor"
+					"PatientDoctor",
+					"Doctor"
 		],
 		"constraints": {
 				"Appointment.PatientSerNum":"Patient.PatientSerNum",
